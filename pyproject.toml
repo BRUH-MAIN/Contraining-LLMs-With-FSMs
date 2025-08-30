@@ -1,0 +1,21 @@
+[project]
+name = "contraining-llms-with-fsms"
+version = "0.1.0"
+description = "Constraining Large Language Models using Finite State Machines"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "groq>=0.11.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "typing-extensions>=4.0.0",
+    "ruff>=0.12.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]

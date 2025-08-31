@@ -1,20 +1,18 @@
 """
-Constraining LLMs with Finite State Machines
-============================================
+HTTP Status Code Constraints for LLMs
+====================================
 
-A Python library for constraining Large Language Model outputs using
-Finite State Machines (FSMs) with Groq API integration.
+A simple demonstration of constraining LLM outputs to valid HTTP status codes.
 
 Main Components:
-- FSM: Finite State Machine implementation with constraints
+- FSM: Finite State Machine implementation with HTTP constraints
 - LLM: Groq API client with constraint enforcement
-- Examples: Practical usage examples
 
 Usage:
-    >>> from src.fsm import FiniteStateMachine, State, StateType
+    >>> from src.fsm import FiniteStateMachine, State, StateType, HTTPConstraints
     >>> from src.llm import GroqClient, ConstrainedLLM
     >>> 
-    >>> # Create FSM
+    >>> # Create FSM with HTTP constraints
     >>> fsm = FiniteStateMachine("start")
     >>> # Add states and transitions...
     >>> 
@@ -30,10 +28,7 @@ from .fsm import (
     Transition,
     StateType,
     FSMBuilder,
-    TextConstraints,
-    StructuralConstraints,
-    ContentConstraints,
-    CompositeConstraints
+    HTTPConstraints
 )
 
 from .llm import (
@@ -44,8 +39,8 @@ from .llm import (
 )
 
 __version__ = "0.1.0"
-__author__ = "FSM-LLM Project"
-__description__ = "Constraining Large Language Models using Finite State Machines"
+__author__ = "HTTP-Status-Code-Constraints Project"
+__description__ = "Constraining LLMs to generate valid HTTP status codes using FSMs"
 
 __all__ = [
     # FSM components
@@ -54,10 +49,7 @@ __all__ = [
     'Transition',
     'StateType',
     'FSMBuilder',
-    'TextConstraints',
-    'StructuralConstraints',
-    'ContentConstraints',
-    'CompositeConstraints',
+    'HTTPConstraints',
     
     # LLM components
     'GroqClient',

@@ -9,10 +9,7 @@ from .state_machine import (
     FSMBuilder
 )
 from .constraints import (
-    TextConstraints,
-    StructuralConstraints,
-    ContentConstraints,
-    CompositeConstraints
+    HTTPConstraints
 )
 
 __all__ = [
@@ -21,8 +18,5 @@ __all__ = [
     'Transition',
     'StateType',
     'FSMBuilder',
-    'TextConstraints',
-    'StructuralConstraints',
-    'ContentConstraints',
-    'CompositeConstraints'
+    'HTTPConstraints'
 ]

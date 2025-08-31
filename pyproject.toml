@@ -1,10 +1,10 @@
 [project]
-name = "contraining-llms-with-fsms"
+name = "http-status-code-constraints"
 version = "0.1.0"
-description = "Add your description here"
+description = "Constraining LLMs to generate valid HTTP status codes using FSMs"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "langchain-community>=0.3.29",
-    "langchain-groq>=0.3.7",
+    "groq>=0.4.0",
+    "python-dotenv>=1.0.0",
 ]

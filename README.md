@@ -1,12 +1,94 @@
-# Constraining LLMs with Finite State Machines
+# HTTP Status Code Constraints for LLMs
 
-A Python library for constraining Large Language Model outputs using Finite State Machines (FSMs) with Groq API integration.
+A simple demonstration of constraining LLM outputs to valid HTTP status codes using Finite State Machines (FSMs).
 
-## 🎯 Overview
+## Features
 
-This project demonstrates how to use Finite State Machines to constrain and structure LLM outputs, ensuring they follow specific patterns, formats, or conversation flows. It provides a flexible framework for creating custom constraints and integrates with the Groq API for fast LLM inference.
+- **Server Error Codes (5xx)**: Constrains LLM to generate only server error status codes like 500, 502, 503, 504, etc.
+- **Client Error Codes (4xx)**: Constrains LLM to generate only client error status codes like 400, 401, 403, 404, etc.
+- **All Valid HTTP Codes**: Constrains LLM to generate any valid HTTP status code from 1xx to 5xx ranges.
 
-## 🚀 Features
+## Setup
+
+1. **Install dependencies**:
+   ```bash
+   pip install groq python-dotenv
+   ```
+
+2. **Set up your API key**:
+   - Get a Groq API key from [Groq Console](https://console.groq.com/)
+   - Add it to your `.env` file:
+     ```
+     GROQ_API_KEY=your_groq_api_key_here
+     ```
+
+## Usage
+
+Run the demos:
+
+```bash
+# Run constraint validation demo (no LLM calls)
+python demo.py
+
+# Run LLM integration demo (requires API key)
+python main.py
+
+# Run specific examples with LLM
+python main.py --example server  # Server error codes only
+python main.py --example client  # Client error codes only
+```
+
+## HTTP Status Code Examples
+
+### Server Error Codes (5xx)
+- **500**: Internal Server Error
+- **502**: Bad Gateway
+- **503**: Service Unavailable
+- **504**: Gateway Timeout
+
+### Client Error Codes (4xx)
+- **400**: Bad Request
+- **401**: Unauthorized
+- **403**: Forbidden
+- **404**: Not Found
+
+## How It Works
+
+1. **FSM Creation**: Creates finite state machines with constraints for specific HTTP code ranges
+2. **LLM Integration**: Uses Groq API to generate responses
+3. **Constraint Validation**: Ensures generated text matches only valid HTTP status codes
+4. **Feedback Loop**: Rejects invalid codes and requests new generation until constraint is satisfied
+
+## Example Output
+
+```
+🚀 HTTP Status Code Constraint with LLMs
+============================================
+Constraining LLM outputs to valid HTTP status codes
+
+🔴 Server Error Codes (5xx) Demo
+-----------------------------------
+
+📝 Prompt: What HTTP status code indicates a gateway timeout?
+✅ Generated HTTP Code: 504
+   Model: mixtral-8x7b-32768
+   Tokens: 3
+```
+
+## Project Structure
+
+```
+├── main.py              # LLM integration demo
+├── demo.py              # Constraint validation demo  
+├── .env                 # API key configuration
+├── src/
+│   ├── fsm/
+│   │   ├── constraints.py    # HTTP status code constraints
+│   │   └── state_machine.py  # FSM implementation
+│   └── llm/
+│       └── groq_client.py    # Groq API client
+└── README.md
+```
 
 - **Finite State Machine Framework**: Define complex state transitions and constraints
 - **Groq API Integration**: Fast LLM inference with constraint enforcement

@@ -1,10 +1,10 @@
 """
-Simple FSM for HTTP Status Codes
-===============================
+LaTeX Math Finite State Machine
+==============================
 
-A digit-by-digit finite state machine for HTTP status codes.
+FSM for validating LaTeX mathematical expressions token-by-token.
 """
 
-from .http_fsm import HTTPCodeFSM
+from .latex_math_fsm import LaTeXMathFSM
 
-__all__ = ['HTTPCodeFSM']
+__all__ = ['LaTeXMathFSM']

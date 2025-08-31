@@ -1,9 +1,8 @@
 """
-Simple Groq Client for FSM-constrained generation.
-=================================================
+Simple Groq Client for LaTeX Math FSM-constrained generation.
+===========================================================
 
-A simplified client that works with the HTTP FSM to generate
-valid HTTP status codes digit by digit.
+A client that works with LaTeX Math FSMs to generate valid LaTeX mathematical expressions token-by-token.
 """
 
 import os
@@ -52,203 +51,266 @@ class SimpleGroqClient:
             
         except Exception as e:
             raise RuntimeError(f"Failed to generate text: {str(e)}")
-    
-    def generate_with_fsm(self, prompt: str, fsm, verbose: bool = True) -> str:
-        """Generate text constrained by FSM with detailed logging."""
+
+    def generate_with_latex_fsm(self, prompt: str, fsm, verbose: bool = True) -> str:
+        """Generate LaTeX math expressions constrained by FSM with detailed logging."""
         # Reset FSM
         fsm.reset()
         
         if verbose:
-            print(f"\n🤖 LLM Generation Process")
+            print(f"\n🧮 LaTeX Generation Process")
             print(f"📝 Original prompt: {prompt}")
         
-        # Create a prompt that asks for HTTP status code
-        http_prompt = f"""
+        # Create a prompt that asks for LaTeX math expression
+        latex_prompt = f"""
 {prompt}
 
-Please respond with only a 3-digit HTTP status code number. 
-Examples: 200, 404, 500, 301
+Please respond with a simple LaTeX mathematical expression enclosed in dollar signs.
+Examples: $x^2$, $\\frac{{a}}{{b}}$, $\\alpha + \\beta$
 
 Response:"""
         
         if verbose:
             print(f"📋 Enhanced prompt sent to LLM:")
-            print(f"   {http_prompt.strip()}")
+            print(f"   {latex_prompt.strip()}")
         
         # Generate response
-        response = self.generate_simple(http_prompt, max_tokens=10, temperature=0.1)
+        response = self.generate_simple(latex_prompt, max_tokens=30, temperature=0.1)
         
         if verbose:
             print(f"\n🎯 Raw LLM Response:")
             print(f"   '{response}'")
         
-        # Extract 3-digit number from response
-        http_code = self.extract_http_code(response)
+        # Extract LaTeX expression from response
+        latex_expr = self.extract_latex_expression(response)
         
         if verbose:
-            print(f"\n🔍 Extracted HTTP Code: {http_code if http_code else 'None found'}")
+            print(f"\n🔍 Extracted LaTeX Expression: {latex_expr if latex_expr else 'None found'}")
         
-        if http_code:
+        if latex_expr:
             if verbose:
-                print(f"\n🧪 Testing '{http_code}' with FSM...")
+                print(f"\n🧪 Testing '{latex_expr}' with LaTeX FSM...")
             
             # Test with FSM step by step
             fsm.reset()
-            is_valid = self._test_code_with_detailed_fsm(http_code, fsm, verbose)
+            is_valid = self._test_latex_with_detailed_fsm(latex_expr, fsm, verbose)
             
             if is_valid:
                 if verbose:
-                    print(f"✅ LLM output '{http_code}' is valid!")
-                return http_code
+                    print(f"✅ LLM output '{latex_expr}' is valid!")
+                return latex_expr
             else:
                 if verbose:
-                    print(f"❌ LLM output '{http_code}' rejected by FSM")
-                    print(f"🔧 Generating FSM-compliant code...")
+                    print(f"❌ LLM output '{latex_expr}' rejected by FSM")
+                    print(f"🔧 Generating FSM-compliant expression...")
                 # FSM rejected it, try to generate a valid one
-                return self.generate_valid_code_with_fsm(fsm, verbose)
+                return self.generate_valid_latex_with_fsm(fsm, prompt, verbose)
         else:
             if verbose:
-                print(f"❌ No valid HTTP code found in LLM response")
-                print(f"🔧 Generating FSM-compliant code...")
-            # No valid code found, generate one with FSM
-            return self.generate_valid_code_with_fsm(fsm, verbose)
+                print(f"❌ No valid LaTeX expression found in LLM response")
+                print(f"🔧 Generating FSM-compliant expression...")
+            # No valid expression found, generate one with FSM
+            return self.generate_valid_latex_with_fsm(fsm, prompt, verbose)
     
-    def extract_http_code(self, text: str) -> Optional[str]:
-        """Extract HTTP status code from text."""
-        # Look for 3-digit numbers
-        matches = re.findall(r'\b\d{3}\b', text)
-        if matches:
-            # Return the first 3-digit number found
-            return matches[0]
+    def extract_latex_expression(self, text: str) -> Optional[str]:
+        """Extract LaTeX mathematical expression from text."""
+        # Look for expressions in dollar signs
+        import re
+        
+        # Try inline math first: $...$
+        inline_matches = re.findall(r'\$([^$]+)\$', text)
+        if inline_matches:
+            return f"${inline_matches[0]}$"
+        
+        # Try display math: $$...$$
+        display_matches = re.findall(r'\$\$([^$]+)\$\$', text)
+        if display_matches:
+            return f"$${display_matches[0]}$$"
+        
+        # Try LaTeX blocks: \[...\]
+        block_matches = re.findall(r'\\\\?\[([^\\]+)\\\\?\]', text)
+        if block_matches:
+            return f"\\[{block_matches[0]}\\]"
+        
         return None
     
-    def _test_code_with_detailed_fsm(self, code: str, fsm, verbose: bool = True) -> bool:
-        """Test a code with FSM and show detailed step-by-step process."""
-        if not code or len(code) != 3:
+    def _test_latex_with_detailed_fsm(self, latex_expr: str, fsm, verbose: bool) -> bool:
+        """Test LaTeX expression with FSM and show detailed steps."""
+        try:
             if verbose:
-                print(f"   ❌ Invalid format: '{code}' (must be 3 digits)")
+                print(f"   🔄 Processing '{latex_expr}' token by token:")
+            
+            # Tokenize the expression
+            tokens = fsm.tokenize(latex_expr)
+            
+            if verbose:
+                print(f"   📝 Tokens: {tokens}")
+            
+            for i, token in enumerate(tokens):
+                if verbose:
+                    possibilities = fsm.get_current_possibilities()
+                    print(f"      Step {i+1}: Processing token '{token}'")
+                    print(f"      Current state: {fsm.state}")
+                    print(f"      Valid possibilities: {possibilities[:10]}{'...' if len(possibilities) > 10 else ''}")
+                
+                if not fsm.process_token(token):
+                    if verbose:
+                        print(f"      ❌ FSM rejected token '{token}'")
+                    return False
+                
+                if verbose:
+                    print(f"      ✅ FSM accepted '{token}' -> New state: {fsm.state}")
+            
+            # Check if expression is complete
+            is_complete = fsm.is_complete()
+            
+            if verbose:
+                print(f"\n   📊 Validation Summary:")
+                print(f"   Processed tokens: {len(tokens)}")
+                print(f"   FSM path: {' -> '.join(fsm.path)}")
+                print(f"   Final state: {fsm.state}")
+                print(f"   Complete expression: {is_complete}")
+            
+            return is_complete
+            
+        except Exception as e:
+            if verbose:
+                print(f"   ❌ Error during FSM processing: {str(e)}")
             return False
-        
+    
+    def generate_valid_latex_with_fsm(self, fsm, prompt: str, verbose: bool) -> str:
+        """Generate a valid LaTeX expression using FSM step by step."""
         if verbose:
-            print(f"   🔄 Processing '{code}' digit by digit:")
+            print(f"\n   🔧 FSM-guided LaTeX generation:")
         
-        # Process each digit
-        for i, digit in enumerate(code):
-            current_state = fsm.state
-            possibilities = fsm.get_current_possibilities()
-            
-            if verbose:
-                print(f"      Step {i+1}: Processing digit '{digit}'")
-                print(f"      Current state: {current_state}")
-                print(f"      Valid possibilities: {possibilities}")
-            
-            success = fsm.process_digit(digit)
-            
-            if success:
-                if verbose:
-                    print(f"      ✅ Accepted '{digit}' -> New state: {fsm.state}")
-            else:
-                if verbose:
-                    print(f"      ❌ Rejected '{digit}' (not in valid possibilities)")
-                    print(f"      FSM validation failed at digit {i+1}")
-                return False
-        
-        # Check if we reached a valid final state
-        is_complete = fsm.is_complete()
-        is_valid_code = int(code) in fsm.VALID_CODES if code.isdigit() else False
-        
-        if verbose:
-            print(f"   📊 Final validation:")
-            print(f"      Complete path: {' -> '.join(fsm.path)}")
-            print(f"      FSM complete: {is_complete}")
-            print(f"      Valid HTTP code: {is_valid_code}")
-        
-        return is_complete and is_valid_code
-
-    def generate_valid_code_with_fsm(self, fsm, verbose: bool = True) -> str:
-        """Generate a valid HTTP code using FSM guidance with detailed logging."""
+        # Reset FSM
         fsm.reset()
+        result_expr = ""
+        max_tokens = 20
         
-        if verbose:
-            print(f"\n🔧 FSM-Guided Generation Process:")
-            print(f"   Starting from state: {fsm.state}")
-        
-        # Build the code digit by digit
-        result_code = ""
-        
-        for position in range(3):
+        for position in range(max_tokens):
+            # Get valid possibilities from FSM
             possibilities = fsm.get_current_possibilities()
             
             if not possibilities:
                 if verbose:
-                    print(f"   ❌ No valid transitions available at position {position}")
+                    print(f"   🛑 No more valid tokens available")
                 break
             
             if verbose:
-                print(f"\n   Step {position + 1}: Choosing digit for position {position + 1}")
-                print(f"   Current state: {fsm.state}")
-                print(f"   Valid possibilities: {possibilities}")
+                print(f"   Step {position + 1}: State '{fsm.state}'")
+                print(f"   Available tokens: {possibilities[:10]}{'...' if len(possibilities) > 10 else ''}")
             
-            # Choose digit using simple preference logic
-            if position == 0:
-                # First digit: prefer common HTTP code ranges
-                if "4" in possibilities:
-                    chosen_digit = "4"
-                    reason = "client error codes are common"
-                elif "2" in possibilities:
-                    chosen_digit = "2" 
-                    reason = "success codes are common"
-                else:
-                    chosen_digit = possibilities[0]
-                    reason = "first available option"
-            else:
-                # For other positions, prefer completing common codes
-                if result_code == "4" and position == 1 and "0" in possibilities:
-                    chosen_digit = "0"
-                    reason = "forming '40x' pattern"
-                elif result_code == "40" and position == 2 and "4" in possibilities:
-                    chosen_digit = "4"
-                    reason = "completing '404'"
-                elif result_code == "2" and position == 1 and "0" in possibilities:
-                    chosen_digit = "0"
-                    reason = "forming '20x' pattern"
-                elif result_code == "20" and position == 2 and "0" in possibilities:
-                    chosen_digit = "0"
-                    reason = "completing '200'"
-                else:
-                    chosen_digit = possibilities[0]
-                    reason = "first available option"
+            # Choose token based on prompt content and FSM state
+            chosen_token = self._choose_latex_token(prompt, possibilities, fsm.state, result_expr, verbose)
             
-            if verbose:
-                print(f"   🎯 Chosen: '{chosen_digit}' ({reason})")
-            
-            # Process the chosen digit
-            if fsm.process_digit(chosen_digit):
-                result_code += chosen_digit
+            if chosen_token is None:
                 if verbose:
-                    print(f"   ✅ FSM accepted '{chosen_digit}' -> New state: {fsm.state}")
-                    print(f"   Current code: '{result_code}'")
+                    print(f"   🎯 Choosing to end generation")
+                break
+            
+            # Process the chosen token
+            if fsm.process_token(chosen_token):
+                result_expr += chosen_token
+                if verbose:
+                    print(f"   ✅ FSM accepted '{chosen_token}' -> New state: {fsm.state}")
+                    print(f"   Current expression: '{result_expr}'")
+                
+                # Check if we have a complete expression
+                if fsm.is_complete():
+                    if verbose:
+                        print(f"   🎉 Complete valid expression generated!")
+                    break
             else:
                 if verbose:
-                    print(f"   ❌ FSM rejected '{chosen_digit}' (unexpected error)")
+                    print(f"   ❌ FSM rejected '{chosen_token}' (unexpected error)")
                 break
         
-        # Ensure we have a valid 3-digit code
-        if len(result_code) == 3 and fsm.is_complete():
-            final_code = int(result_code)
-            is_valid = final_code in fsm.VALID_CODES
-            
+        # Validate final result
+        if fsm.is_complete():
             if verbose:
                 print(f"\n   📊 Generation Summary:")
-                print(f"   Generated code: '{result_code}'")
+                print(f"   Generated expression: '{result_expr}'")
                 print(f"   FSM path: {' -> '.join(fsm.path)}")
-                print(f"   Valid HTTP code: {is_valid}")
-                
-            if is_valid:
-                return result_code
+                print(f"   Valid LaTeX expression: True")
+            return result_expr
         
         if verbose:
-            print(f"   ⚠️  Generation failed, using fallback")
+            print(f"   ⚠️  Generation incomplete, using fallback")
         
-        # Fallback to a known valid code
-        return "200"
+        # Fallback to a simple valid expression
+        return "$x$"
+    
+    def _choose_latex_token(self, prompt: str, possibilities: list, state: str, current_expr: str, verbose: bool) -> Optional[str]:
+        """Choose the most appropriate LaTeX token based on context."""
+        prompt_lower = prompt.lower()
+        
+        # End conditions
+        if "$" in possibilities and len(current_expr) > 3:
+            # Simple heuristic: end after generating some content
+            if any(char in current_expr for char in "xyzabc123"):
+                if verbose:
+                    print(f"   🎯 Chosen: '$' (completing expression)")
+                return "$"
+        
+        # Content-based choices
+        if "fraction" in prompt_lower and "\\frac" in possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '\\frac' (prompt mentions fraction)")
+            return "\\frac"
+        elif "square" in prompt_lower and "^" in possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '^' (prompt mentions square)")
+            return "^"
+        elif "subscript" in prompt_lower and "_" in possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '_' (prompt mentions subscript)")
+            return "_"
+        elif "alpha" in prompt_lower and "\\alpha" in possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '\\alpha' (prompt mentions alpha)")
+            return "\\alpha"
+        elif "beta" in prompt_lower and "\\beta" in possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '\\beta' (prompt mentions beta)")
+            return "\\beta"
+        
+        # State-based choices
+        if state == "start":
+            for token in ["$"]:
+                if token in possibilities:
+                    if verbose:
+                        print(f"   🎯 Chosen: '{token}' (starting math mode)")
+                    return token
+        elif state == "math_mode":
+            # Prefer variables for basic expressions
+            for token in ["x", "y", "z", "a", "b", "1", "2", "+"]:
+                if token in possibilities:
+                    if verbose:
+                        print(f"   🎯 Chosen: '{token}' (basic math content)")
+                    return token
+        elif state in ["superscript", "subscript"]:
+            for token in ["2", "i", "n", "1", "{"]:
+                if token in possibilities:
+                    if verbose:
+                        print(f"   🎯 Chosen: '{token}' (simple {state} content)")
+                    return token
+        elif state == "fraction_num":
+            if "{" in possibilities:
+                if verbose:
+                    print(f"   🎯 Chosen: '{{' (opening fraction numerator)")
+                return "{"
+        elif state == "content":
+            for token in ["a", "b", "x", "y", "1", "2", "}"]:
+                if token in possibilities:
+                    if verbose:
+                        print(f"   🎯 Chosen: '{token}' (content inside braces)")
+                    return token
+        
+        # Fallback: first available token
+        if possibilities:
+            if verbose:
+                print(f"   🎯 Chosen: '{possibilities[0]}' (first available)")
+            return possibilities[0]
+        
+        return None

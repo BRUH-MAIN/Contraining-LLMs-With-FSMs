@@ -1,51 +1,49 @@
-# HTTP Status Code FSM - Quick Start
+# LaTeX Math FSM - Quick Start
 
 ## Overview
 
-This project demonstrates a **simplified digit-by-digit finite state machine (FSM)** for constraining HTTP status codes. The FSM processes each digit individually and transitions through states:
+This project demonstrates a **token-by-token finite state machine (FSM)** for constraining LaTeX mathematical expressions. The FSM processes each token individually and transitions through states to validate mathematical syntax:
 
-1. **start** → **first_digit** (accepts 1, 2, 3, 4, 5)
-2. **first_digit** → **second_digit** (accepts 0-9)
-3. **second_digit** → **third_digit** (accepts valid digits based on first two)
+1. **start** → **math_mode** (accepts $, $$, \[)
+2. **math_mode** → **superscript/subscript/content** (processes variables, operators, commands)
+3. **Various states** for handling fractions, braces, commands, etc.
 
 ## Key Features
 
-- ✅ **Digit-by-digit processing**: FSM moves state by state for each digit
-- ✅ **Real-time validation**: Only valid HTTP codes can complete the FSM path
-- ✅ **Simple architecture**: Streamlined codebase focused on core FSM concepts
-- ✅ **LLM integration**: Generate valid HTTP codes using Groq API
+- ✅ **Token-by-token processing**: FSM moves state by state for each LaTeX token
+- ✅ **Real-time validation**: Only valid LaTeX math expressions can complete the FSM path
+- ✅ **Comprehensive coverage**: Supports 200+ LaTeX math commands, Greek letters, operators
+- ✅ **LLM integration**: Generate valid LaTeX math using constrained decoding
 
 ## Quick Demo
 
 ```bash
-# Run the simple FSM demo
-python3 demo_simple.py
+# Run the LaTeX FSM demo
+python3 demo_latex.py
 
-# Run the full demo with LLM integration (requires GROQ_API_KEY)
-python3 main.py
+# Run the integration demo showing LLM constraint
+python3 demo_latex_integration.py
 ```
 
 ## Example Output
 
 ```
-📝 Testing: '404'
-   Step 1: Processing digit '4'
-   Current state: start
-   Valid possibilities: ['1', '2', '3', '4', '5']
-   ✅ Accepted '4' -> New state: first_digit
+📝 Testing: '$\frac{x^2}{y}$'
+   Tokens: ['$', '\frac', '{', 'x', '^', '2', '}', '{', 'y', '}', '$']
+   Step 1: '$' | start → math_mode ✅
+   Step 2: '\frac' | math_mode → fraction_num ✅
+   Step 3: '{' | fraction_num → content ✅
+   Step 4: 'x' | content → content ✅
+   Step 5: '^' | content → content ✅
+   Step 6: '2' | content → content ✅
+   Step 7: '}' | content → math_mode ✅
+   Step 8: '{' | math_mode → content ✅
+   Step 9: 'y' | content → content ✅
+   Step 10: '}' | content → math_mode ✅
+   Step 11: '$' | math_mode → end_state ✅
    
-   Step 2: Processing digit '0'
-   Current state: first_digit
-   Valid possibilities: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-   ✅ Accepted '0' -> New state: second_digit
-   
-   Step 3: Processing digit '4'
-   Current state: second_digit
-   Valid possibilities: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-   ✅ Accepted '4' -> New state: third_digit
-   
-   Final result: ✅ Valid
-   FSM path: start -> first_digit -> second_digit -> third_digit
+   Result: ✅ VALID
+   Final State: end_state
 ```
 
 ## Code Structure
@@ -54,7 +52,7 @@ python3 main.py
 src/
 ├── fsm/
 │   ├── __init__.py
-│   └── http_fsm.py          # Simple digit-by-digit FSM
+│   └── latex_math_fsm.py    # Token-by-token LaTeX math FSM
 └── llm/
     ├── __init__.py
     └── simple_client.py     # Simplified Groq client
@@ -63,18 +61,18 @@ src/
 ## Usage with LLM
 
 ```python
-from src.fsm import HTTPCodeFSM
+from src.fsm import LaTeXMathFSM
 from src.llm import SimpleGroqClient
 
 # Create FSM
-fsm = HTTPCodeFSM()
+fsm = LaTeXMathFSM()
 
 # Create LLM client (requires GROQ_API_KEY environment variable)
 client = SimpleGroqClient()
 
-# Generate HTTP code with FSM constraints
-result = client.generate_with_fsm("Give me a server error code", fsm)
-print(f"Generated: {result}")  # e.g., "500"
+# Generate LaTeX math with FSM constraints
+result = client.generate_with_latex_fsm("Generate a fraction with x and y", fsm)
+print(f"Generated: {result}")  # e.g., "$\frac{x}{y}$"
 ```
 
 ## Setup
@@ -92,33 +90,39 @@ echo "GROQ_API_KEY=your_key_here" > .env
 
 3. Run demos:
 ```bash
-python3 demo_simple.py  # FSM-only demo
-python3 main.py         # Full demo with LLM
+python3 demo_latex.py              # LaTeX FSM demo
+python3 demo_latex_integration.py  # Integration demo with simulated LLM
 ```
 
-## How the FSM Works
+## How the LaTeX Math FSM Works
 
-The FSM processes HTTP status codes digit by digit:
+The FSM processes LaTeX mathematical expressions token by token:
 
 1. **State: start** 
-   - Accepts: 1, 2, 3, 4, 5 (valid HTTP first digits)
-   - Transitions to: first_digit
+   - Accepts: $, $$, \[ (math mode delimiters)
+   - Transitions to: math_mode
 
-2. **State: first_digit**
-   - Accepts: 0-9 (any second digit)
-   - Transitions to: second_digit
+2. **State: math_mode**
+   - Accepts: variables (x,y,z), numbers (0-9), operators (+,-,=), commands (\frac, \alpha, etc.)
+   - Transitions to: superscript, subscript, content, or end_state
 
-3. **State: second_digit**
-   - Accepts: only digits that form valid HTTP codes
-   - Transitions to: third_digit
+3. **State: superscript/subscript**
+   - Accepts: single characters or { for grouped expressions
+   - Transitions to: content or back to math_mode
 
-4. **State: third_digit**
-   - Final state - validates complete 3-digit code
+4. **State: content**
+   - Handles content inside braces {}
+   - Tracks brace depth for proper nesting
+   - Transitions back to math_mode when braces close
 
-## Valid HTTP Codes Supported
+## Supported LaTeX Math Elements
 
-- **1xx**: 100, 101, 102, 103
-- **2xx**: 200, 201, 202, 203, 204, 205, 206, 207, 208, 226
-- **3xx**: 300, 301, 302, 303, 304, 305, 307, 308
-- **4xx**: 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422, 423, 424, 425, 426, 428, 429, 431, 451
-- **5xx**: 500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511
+- **Math Modes**: `$...$`, `$$...$$`, `\[...\]`
+- **Variables**: `a-z`, `A-Z`
+- **Numbers**: `0-9`
+- **Operators**: `+`, `-`, `=`, `*`, `/`, `<`, `>`, etc.
+- **Greek Letters**: `\alpha`, `\beta`, `\gamma`, `\theta`, `\pi`, etc.
+- **Functions**: `\sin`, `\cos`, `\tan`, `\ln`, `\log`, `\exp`, etc.
+- **Structures**: `\frac{a}{b}`, `x^2`, `x_{i}`, `\sqrt{x}`, `\sum`, `\int`
+- **Delimiters**: `()`, `[]`, `{}`, `||`, `\langle`, `\rangle`
+- **Environments**: `\begin{matrix}...\end{matrix}` (basic support)

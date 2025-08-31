@@ -1,23 +1,23 @@
 """
-Simple HTTP Status Code FSM
-==========================
+LaTeX Math FSM
+==============
 
-A simplified implementation of constraining HTTP status codes digit by digit.
+A finite state machine for validating LaTeX mathematical expressions token-by-token.
 
 Usage:
-    >>> from src.fsm import HTTPCodeFSM
+    >>> from src.fsm import LaTeXMathFSM
     >>> from src.llm import SimpleGroqClient
     >>> 
     >>> # Create FSM
-    >>> fsm = HTTPCodeFSM()
+    >>> fsm = LaTeXMathFSM()
     >>> 
-    >>> # Test with HTTP code
-    >>> result = fsm.process_input("404")
+    >>> # Test with LaTeX expression
+    >>> result = fsm.process_input("$x^2$")
     >>> print(f"Valid: {result}")
 """
 
-from .fsm import HTTPCodeFSM
+from .fsm import LaTeXMathFSM
 from .llm import SimpleGroqClient
 
-__all__ = ['HTTPCodeFSM', 'SimpleGroqClient']
-__version__ = "0.2.0"
+__all__ = ['LaTeXMathFSM', 'SimpleGroqClient']
+__version__ = "0.3.0"

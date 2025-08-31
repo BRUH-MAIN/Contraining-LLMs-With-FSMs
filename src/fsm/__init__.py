@@ -1,20 +1,10 @@
 """
-FSM package initialization.
-"""
-from .state_machine import (
-    FiniteStateMachine,
-    State,
-    Transition,
-    StateType
-)
-from .constraints import (
-    HTTPConstraints
-)
+Simple FSM for HTTP Status Codes
+===============================
 
-__all__ = [
-    'FiniteStateMachine',
-    'State',
-    'Transition',
-    'StateType',
-    'HTTPConstraints'
-]
+A digit-by-digit finite state machine for HTTP status codes.
+"""
+
+from .http_fsm import HTTPCodeFSM
+
+__all__ = ['HTTPCodeFSM']

@@ -1,14 +1,12 @@
 """
-HTTP Status Code Constraint with LLMs
-====================================
+Simple HTTP Status Code FSM Demo
+==============================
 
-Simple demonstration of HTTP status code constraints for LLM outputs.
+Demonstrates digit-by-digit FSM for HTTP status codes.
+The FSM moves state by state for each digit of a valid HTTP code.
 
 Usage:
     python main.py
-
-Examples:
-    python main.py  # All valid HTTP codes
 """
 
 import os
@@ -22,47 +20,47 @@ load_dotenv()
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent / "src"))
 
-from src.fsm import FiniteStateMachine, State, StateType, Transition
-from src.fsm.constraints import HTTPConstraints
-from src.llm import GroqClient, ConstrainedLLM, ConstrainedLLMConfig
+from src.fsm import HTTPCodeFSM
+from src.llm import SimpleGroqClient
 
 
 def print_banner():
     """Print application banner."""
-    print("🚀 HTTP Status Code Constraint with LLMs")
-    print("=" * 45)
-    print("Constraining LLM outputs to valid HTTP status codes")
+    print("🚀 HTTP Status Code Digit-by-Digit FSM")
+    print("=" * 40)
+    print("Each digit transitions to the next state")
     print()
 
 
-def create_any_http_code_fsm():
-    """Create FSM for any valid HTTP status code."""
-    fsm = FiniteStateMachine("start")
+def demo_http_fsm():
+    """Demonstrate the HTTP code FSM."""
+    print("🟢 HTTP Status Code FSM Demo")
+    print("-" * 30)
     
-    # Create and add states
-    start_state = State("start", StateType.INITIAL)
-    http_code_state = State("http_code", StateType.FINAL,
-                           validators=[HTTPConstraints.valid_http_status_code()])
+    # Create HTTP code FSM
+    fsm = HTTPCodeFSM()
     
-    fsm.add_state(start_state)
-    fsm.add_state(http_code_state)
+    # Test various inputs
+    test_inputs = ["404", "200", "500", "301", "123", "999"]
     
-    # Add transitions
-    transition = Transition("start", "http_code", 
-                          lambda x: True,  # Accept any input, constraint validation happens at state level
-                          "Generate valid HTTP code")
-    fsm.add_transition(transition)
-    
-    return fsm
+    for test_input in test_inputs:
+        print(f"\n📝 Testing: '{test_input}'")
+        fsm.reset()
+        
+        result = fsm.process_input(test_input)
+        print(f"   Result: {result}")
+        print(f"   Path: {' -> '.join(fsm.path)}")
+        
+        if result:
+            print(f"   ✅ Valid HTTP code")
+        else:
+            print(f"   ❌ Invalid HTTP code")
 
 
-def demo_all_http_codes():
-    """Demonstrate any valid HTTP code constraint."""
-    print("🟢 HTTP Status Code Validation Demo")
-    print("-" * 35)
-    
-    # Create FSM for any HTTP code
-    fsm = create_any_http_code_fsm()
+def demo_with_llm():
+    """Demonstrate with LLM generation."""
+    print("\n🤖 LLM Generation Demo")
+    print("-" * 25)
     
     # Create LLM client
     api_key = os.getenv("GROQ_API_KEY")
@@ -70,31 +68,22 @@ def demo_all_http_codes():
         print("❌ GROQ_API_KEY not found in .env file")
         return
         
-    client = GroqClient(api_key=api_key)
-    
-    # Create constrained LLM
-    config = ConstrainedLLMConfig(
-        model="llama3-8b-8192",
-        max_tokens=10,
-        temperature=0.7
-    )
-    
-    constrained_llm = ConstrainedLLM(client, config)
+    client = SimpleGroqClient(api_key)
+    fsm = HTTPCodeFSM()
     
     # Test prompts
     prompts = [
-        "Server error HTTP code",
-        "What's a redirect status code?",
-        "random 3 digit number",
+        "Generate a server error HTTP status code",
+        "What's a successful HTTP status code?", 
+        "Give me a client error code"
     ]
     
     for prompt in prompts:
         print(f"\n📝 Prompt: {prompt}")
         try:
-            response = constrained_llm.generate_with_constraints(prompt, fsm)
-            print(f"✅ Generated HTTP Code: {response.text}")
-            print(f"   Model: {response.model}")
-            print(f"   Tokens: {response.tokens_used}")
+            response = client.generate_with_fsm(prompt, fsm)
+            print(f"✅ Generated: {response}")
+            print(f"   FSM Path: {' -> '.join(fsm.path)}")
         except Exception as e:
             print(f"❌ Error: {e}")
 
@@ -102,7 +91,8 @@ def demo_all_http_codes():
 def main():
     """Main function."""
     print_banner()
-    demo_all_http_codes()
+    demo_http_fsm()
+    demo_with_llm()
 
 
 if __name__ == "__main__":

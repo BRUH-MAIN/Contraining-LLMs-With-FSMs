@@ -1,16 +1,7 @@
 """
-LLM package for constrained generation.
+Simple LLM Client for FSM-constrained generation.
 """
-from .groq_client import (
-    GroqClient,
-    ConstrainedLLM,
-    ConstrainedLLMConfig,
-    LLMResponse
-)
 
-__all__ = [
-    'GroqClient',
-    'ConstrainedLLM', 
-    'ConstrainedLLMConfig',
-    'LLMResponse'
-]
+from .simple_client import SimpleGroqClient
+
+__all__ = ['SimpleGroqClient']

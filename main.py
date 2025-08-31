@@ -83,9 +83,9 @@ def demo_all_http_codes():
     
     # Test prompts
     prompts = [
-        "Give me the HTTP code for successful request",
+        "Server error HTTP code",
         "What's a redirect status code?",
-        "Provide any valid HTTP status code",
+        "random 3 digit number",
     ]
     
     for prompt in prompts:

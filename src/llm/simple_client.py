@@ -189,40 +189,32 @@ Response:"""
                 print(f"   Current state: {fsm.state}")
                 print(f"   Valid possibilities: {possibilities}")
             
-            # For simplicity, pick the first valid possibility
-            # In a more sophisticated implementation, we could:
-            # 1. Ask LLM to choose from possibilities
-            # 2. Use probabilities based on context
-            # 3. Apply domain-specific logic
-            
+            # Choose digit using simple preference logic
             if position == 0:
                 # First digit: prefer common HTTP code ranges
-                if "4" in possibilities:  # Client errors are common
+                if "4" in possibilities:
                     chosen_digit = "4"
                     reason = "client error codes are common"
-                elif "2" in possibilities:  # Success codes are common
-                    chosen_digit = "2"
+                elif "2" in possibilities:
+                    chosen_digit = "2" 
                     reason = "success codes are common"
-                elif "5" in possibilities:  # Server errors
-                    chosen_digit = "5"
-                    reason = "server error codes"
                 else:
                     chosen_digit = possibilities[0]
                     reason = "first available option"
             else:
-                # For second and third digits, choose based on common codes
-                if result_code == "4" and position == 1:
-                    chosen_digit = "0" if "0" in possibilities else possibilities[0]
+                # For other positions, prefer completing common codes
+                if result_code == "4" and position == 1 and "0" in possibilities:
+                    chosen_digit = "0"
                     reason = "forming '40x' pattern"
-                elif result_code == "40" and position == 2:
-                    chosen_digit = "4" if "4" in possibilities else possibilities[0]
-                    reason = "completing '404' (Not Found)"
-                elif result_code == "2" and position == 1:
-                    chosen_digit = "0" if "0" in possibilities else possibilities[0]
+                elif result_code == "40" and position == 2 and "4" in possibilities:
+                    chosen_digit = "4"
+                    reason = "completing '404'"
+                elif result_code == "2" and position == 1 and "0" in possibilities:
+                    chosen_digit = "0"
                     reason = "forming '20x' pattern"
-                elif result_code == "20" and position == 2:
-                    chosen_digit = "0" if "0" in possibilities else possibilities[0]
-                    reason = "completing '200' (OK)"
+                elif result_code == "20" and position == 2 and "0" in possibilities:
+                    chosen_digit = "0"
+                    reason = "completing '200'"
                 else:
                     chosen_digit = possibilities[0]
                     reason = "first available option"

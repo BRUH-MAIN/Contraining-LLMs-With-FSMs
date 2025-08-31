@@ -12,7 +12,7 @@ States:
 - third_digit: Final state after processing third digit (0-9)
 """
 
-from typing import List, Optional
+from typing import List
 
 
 class HTTPCodeFSM:
@@ -133,41 +133,3 @@ class HTTPCodeFSM:
             return self.get_valid_third_digits(self.current_code)
         else:
             return []
-    
-    def get_state_info(self) -> dict:
-        """Get current state information."""
-        return {
-            "state": self.state,
-            "current_code": self.current_code,
-            "path": self.path.copy(),
-            "next_possibilities": self.get_current_possibilities(),
-            "is_complete": self.is_complete()
-        }
-    
-    def generate_valid_completion(self) -> Optional[str]:
-        """Generate a valid completion from current state."""
-        if self.state == "start":
-            # Return a common HTTP code
-            return "200"
-        elif self.state == "first_digit":
-            # Complete with common second and third digits
-            possibilities = self.get_valid_second_digits(self.current_code)
-            if possibilities:
-                # Try to find a common completion
-                for second in ["0", "1", "2", "3", "4"]:
-                    if second in possibilities:
-                        test_code = self.current_code + second
-                        thirds = self.get_valid_third_digits(test_code)
-                        if thirds:
-                            return test_code + thirds[0]
-        elif self.state == "second_digit":
-            # Complete with valid third digit
-            thirds = self.get_valid_third_digits(self.current_code)
-            if thirds:
-                return self.current_code + thirds[0]
-        
-        return None
-    
-    def __str__(self) -> str:
-        """String representation of FSM."""
-        return f"HTTPCodeFSM(state={self.state}, code='{self.current_code}')"

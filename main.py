@@ -75,17 +75,42 @@ def demo_with_llm():
     prompts = [
         "Generate a server error HTTP status code",
         "What's a successful HTTP status code?", 
-        "Give me a client error code"
+        "Give me a client error code",
+        "I need an invalid code like 999"  # This should trigger correction
     ]
     
-    for prompt in prompts:
-        print(f"\n📝 Prompt: {prompt}")
+    for i, prompt in enumerate(prompts, 1):
+        print(f"\n{'='*60}")
+        print(f"🧪 Test {i}/{len(prompts)}")
+        print(f"{'='*60}")
+        
         try:
-            response = client.generate_with_fsm(prompt, fsm)
-            print(f"✅ Generated: {response}")
-            print(f"   FSM Path: {' -> '.join(fsm.path)}")
+            response = client.generate_with_fsm(prompt, fsm, verbose=True)
+            print(f"\n🎉 Final Result: {response}")
+            print(f"{'='*60}")
         except Exception as e:
             print(f"❌ Error: {e}")
+            print(f"{'='*60}")
+    
+    # Additional test: Show what happens with invalid LLM output
+    print(f"\n{'='*60}")
+    print(f"🧪 Additional Test: Direct Invalid Code Testing")
+    print(f"{'='*60}")
+    
+    # Simulate invalid LLM responses
+    test_responses = ["999", "abc", "12", "1234", "600"]
+    
+    for test_response in test_responses:
+        print(f"\n🔍 Testing simulated LLM response: '{test_response}'")
+        fsm.reset()
+        
+        # Test with FSM
+        client._test_code_with_detailed_fsm(test_response, fsm, verbose=True)
+        
+        if not fsm.is_complete() or int(test_response) not in fsm.VALID_CODES:
+            print(f"🔧 Correction needed - generating valid alternative:")
+            corrected = client.generate_valid_code_with_fsm(fsm, verbose=True)
+            print(f"✅ Corrected to: {corrected}")
 
 
 def main():

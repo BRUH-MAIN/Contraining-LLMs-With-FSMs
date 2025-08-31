@@ -27,7 +27,6 @@ from .fsm import (
     State,
     Transition,
     StateType,
-    FSMBuilder,
     HTTPConstraints
 )
 
@@ -48,7 +47,6 @@ __all__ = [
     'State',
     'Transition',
     'StateType',
-    'FSMBuilder',
     'HTTPConstraints',
     
     # LLM components

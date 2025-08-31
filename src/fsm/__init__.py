@@ -5,8 +5,7 @@ from .state_machine import (
     FiniteStateMachine,
     State,
     Transition,
-    StateType,
-    FSMBuilder
+    StateType
 )
 from .constraints import (
     HTTPConstraints
@@ -17,6 +16,5 @@ __all__ = [
     'State',
     'Transition',
     'StateType',
-    'FSMBuilder',
     'HTTPConstraints'
 ]

@@ -1,0 +1,11 @@
+# LaTeX Math FSM - Requirements
+# ============================
+
+# Core dependencies
+groq>=0.4.0
+python-dotenv>=1.0.0
+
+# Web interface dependencies
+streamlit>=1.28.0
+plotly>=5.17.0
+pandas>=2.0.0

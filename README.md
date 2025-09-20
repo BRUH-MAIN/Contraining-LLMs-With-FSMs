@@ -22,8 +22,48 @@ This project demonstrates a **token-by-token finite state machine (FSM)** for co
 python3 demo_latex.py
 
 # Run the integration demo showing LLM constraint
-python3 demo_latex_integration.py
+python3 main.py
+
+# Run the interactive Streamlit web interface
+streamlit run streamlit_app.py
 ```
+
+## Web Interface
+
+Launch the interactive Streamlit web application:
+
+### Option 1: Using uv (Recommended if you have uv)
+```bash
+# Install dependencies and run directly
+uv run streamlit run streamlit_app.py
+```
+
+### Option 2: Automatic Setup with existing venv
+```bash
+# Use the startup script (detects existing venv)
+./run_app.sh
+```
+
+### Option 3: Manual Setup
+```bash
+# Activate your virtual environment first
+source .venv/bin/activate  # or your venv path
+
+# Install dependencies if needed
+pip install -r requirements.txt
+
+# Set your Groq API key (optional, for LLM features)
+export GROQ_API_KEY="your_api_key_here"
+
+# Launch the web interface
+streamlit run streamlit_app.py
+```
+
+The web interface provides:
+- 🔬 **FSM Demo**: Test LaTeX expressions with step-by-step validation
+- 🤖 **LLM Generation**: Generate LaTeX using AI with FSM constraints  
+- 🗺️ **FSM Visualizer**: Interactive state diagram and current state tracking
+- 📋 **Real-time Feedback**: Live validation and error reporting
 
 ## Example Output
 

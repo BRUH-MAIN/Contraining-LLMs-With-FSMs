@@ -30,7 +30,7 @@ class SimpleGroqClient:
             raise ValueError("GROQ_API_KEY environment variable is required")
         
         self.client = Groq(api_key=self.api_key)
-        self.default_model = "llama3-8b-8192"
+        self.default_model = "llama-3.1-8b-instant"
     
     def generate_simple(
         self,

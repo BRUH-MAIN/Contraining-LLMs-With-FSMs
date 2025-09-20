@@ -74,7 +74,8 @@ def demo_with_llm():
     # Test prompts
     prompts = [
         "Generate a LaTeX expression for x squared",
-        "Create a fraction with a and b in LaTeX"
+        "Create a fraction with a and b in LaTeX",
+        "Solve for the system of linear equations: x + y = 10 and x - y = 4"
     ]
     
     for i, prompt in enumerate(prompts, 1):

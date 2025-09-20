@@ -17,23 +17,30 @@ This project implements a **finite state machine (FSM) for constraining Large La
 
 ```
 /
-├── src/                           # Main source code
-│   ├── fsm/                      # Finite State Machine implementation
-│   │   ├── __init__.py          # FSM module exports
-│   │   └── latex_math_fsm.py    # Main LaTeX Math FSM class
-│   ├── llm/                     # LLM integration
-│   │   ├── __init__.py          # LLM module exports  
-│   │   └── simple_client.py     # Groq API client with FSM constraints
-│   └── __init__.py              # Package initialization
-├── streamlit_app.py             # Interactive Streamlit web interface
-├── demo_latex.py                # Interactive FSM demonstration
-├── main.py                      # Main application entry point
-├── run_app.sh                   # Streamlit app launcher script
-├── pyproject.toml              # Project configuration (uv compatible)
-├── requirements.txt             # Pip dependencies
-├── QUICK_START.md              # Quick setup instructions
-├── .env                        # Environment variables (API keys)
-└── README.md                   # Project documentation
+├── .github/                      # GitHub configuration
+│   └── instructions/            # AI assistant instructions
+│       └── copilot-instructions.md.instructions.md
+├── src/                         # Main source code
+│   ├── fsm/                    # Finite State Machine implementation
+│   │   ├── __init__.py        # FSM module exports
+│   │   └── latex_math_fsm.py  # Main LaTeX Math FSM class
+│   ├── llm/                   # LLM integration
+│   │   ├── __init__.py        # LLM module exports  
+│   │   └── simple_client.py   # Groq API client with FSM constraints
+│   └── __init__.py            # Package initialization
+├── streamlit_app.py           # Interactive Streamlit web interface
+├── demo_latex.py              # Interactive FSM demonstration
+├── main.py                    # Main application entry point
+├── run_app.sh                 # Streamlit app launcher script
+├── pyproject.toml            # Project configuration (uv compatible)
+├── uv.lock                   # UV lock file for dependencies
+├── requirements.txt          # Pip dependencies
+├── QUICK_START.md           # Quick setup instructions
+├── README.md                # Project documentation
+├── LICENSE                  # Project license
+├── .env.example            # Environment variables template
+├── .gitignore              # Git ignore patterns
+└── .python-version         # Python version specification
 ```
 
 ## Key Components
@@ -200,8 +207,10 @@ uv run streamlit run streamlit_app.py
 pip install -r requirements.txt
 streamlit run streamlit_app.py
 
-# Set up environment variables
-echo "GROQ_API_KEY=your_api_key_here" > .env
+# Set up environment variables (copy from template)
+cp .env.example .env
+# Edit .env file and add your API key:
+echo "GROQ_API_KEY=your_api_key_here" >> .env
 ```
 
 ## Common Tasks

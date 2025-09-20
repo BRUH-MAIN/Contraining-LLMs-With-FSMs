@@ -1,10 +1,25 @@
 [project]
-name = "http-status-code-constraints"
-version = "0.1.0"
-description = "Constraining LLMs to generate valid HTTP status codes using FSMs"
+name = "latex-math-fsm-constraints"
+version = "0.3.0"
+description = "Constraining LLMs to generate valid LaTeX mathematical expressions using FSMs"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "groq>=0.4.0",
     "python-dotenv>=1.0.0",
+    "streamlit>=1.28.0",
+    "plotly>=5.17.0",
+    "pandas>=2.0.0",
+    "pytest>=8.4.2",
+    "black>=25.9.0",
+    "flake8>=7.3.0",
+    "mypy>=1.18.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
 ]

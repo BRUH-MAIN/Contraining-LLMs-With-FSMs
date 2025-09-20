@@ -1,9 +1,9 @@
 """
-Simple HTTP Status Code FSM Demo
-==============================
+LaTeX Math FSM Demo
+==================
 
-Demonstrates digit-by-digit FSM for HTTP status codes.
-The FSM moves state by state for each digit of a valid HTTP code.
+Demonstrates token-by-token FSM for LaTeX mathematical expressions.
+The FSM moves state by state for each token of a valid LaTeX math expression.
 
 Usage:
     python main.py
@@ -20,28 +20,28 @@ load_dotenv()
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent / "src"))
 
-from src.fsm import HTTPCodeFSM
+from src.fsm import LaTeXMathFSM
 from src.llm import SimpleGroqClient
 
 
 def print_banner():
     """Print application banner."""
-    print("🚀 HTTP Status Code Digit-by-Digit FSM")
+    print("🧮 LaTeX Math Token-by-Token FSM")
     print("=" * 40)
-    print("Each digit transitions to the next state")
+    print("Each token transitions to the next state")
     print()
 
 
-def demo_http_fsm():
-    """Demonstrate the HTTP code FSM."""
-    print("🟢 HTTP Status Code FSM Demo")
+def demo_latex_fsm():
+    """Demonstrate the LaTeX Math FSM."""
+    print("🟢 LaTeX Math FSM Demo")
     print("-" * 30)
     
-    # Create HTTP code FSM
-    fsm = HTTPCodeFSM()
+    # Create LaTeX Math FSM
+    fsm = LaTeXMathFSM()
     
     # Test various inputs
-    test_inputs = ["404", "200", "500", "301", "123", "999"]
+    test_inputs = ["$x^2$", "$\\frac{a}{b}$", "$\\alpha + \\beta$", "$\\sum_{i=1}^n x_i$", "x + y", "$x^$"]
     
     for test_input in test_inputs:
         print(f"\n📝 Testing: '{test_input}'")
@@ -52,9 +52,9 @@ def demo_http_fsm():
         print(f"   Path: {' -> '.join(fsm.path)}")
         
         if result:
-            print(f"   ✅ Valid HTTP code")
+            print(f"   ✅ Valid LaTeX expression")
         else:
-            print(f"   ❌ Invalid HTTP code")
+            print(f"   ❌ Invalid LaTeX expression")
 
 
 def demo_with_llm():
@@ -69,12 +69,13 @@ def demo_with_llm():
         return
         
     client = SimpleGroqClient(api_key)
-    fsm = HTTPCodeFSM()
+    fsm = LaTeXMathFSM()
     
     # Test prompts
     prompts = [
-        "Generate a server error HTTP status code",
-        "What's a successful HTTP status code?"
+        "Generate a LaTeX expression for x squared",
+        "Create a fraction with a and b in LaTeX",
+        "Solve for the system of linear equations: x + y = 10 and x - y = 4"
     ]
     
     for i, prompt in enumerate(prompts, 1):
@@ -83,7 +84,7 @@ def demo_with_llm():
         print(f"{'='*60}")
         
         try:
-            response = client.generate_with_fsm(prompt, fsm, verbose=True)
+            response = client.generate_with_latex_fsm(prompt, fsm, verbose=True)
             print(f"\n🎉 Final Result: {response}")
             print(f"{'='*60}")
         except Exception as e:
@@ -94,7 +95,7 @@ def demo_with_llm():
 def main():
     """Main function."""
     print_banner()
-    demo_http_fsm()
+    demo_latex_fsm()
     demo_with_llm()
 
 

@@ -13,7 +13,9 @@ This project demonstrates a **token-by-token finite state machine (FSM)** for co
 - ✅ **Token-by-token processing**: FSM moves state by state for each LaTeX token
 - ✅ **Real-time validation**: Only valid LaTeX math expressions can complete the FSM path
 - ✅ **Comprehensive coverage**: Supports 200+ LaTeX math commands, Greek letters, operators
-- ✅ **LLM integration**: Generate valid LaTeX math using constrained decoding
+- ✅ **Multi-model LLM integration**: Support for both Groq API and local Hugging Face models
+- ✅ **Automatic fallback**: Seamlessly switch between API and local models
+- ✅ **Local model support**: Run google/gemma-2-2b-it locally with GPU acceleration
 
 ## Quick Demo
 
@@ -61,7 +63,9 @@ streamlit run streamlit_app.py
 
 The web interface provides:
 - 🔬 **FSM Demo**: Test LaTeX expressions with step-by-step validation
-- 🤖 **LLM Generation**: Generate LaTeX using AI with FSM constraints  
+- 🤖 **LLM Generation**: Generate LaTeX using AI with FSM constraints
+- 🎯 **Model Selection**: Choose between Groq API, Local Gemma, or Auto mode
+- 🔄 **Automatic Fallback**: Seamless switching between available models
 - 🗺️ **FSM Visualizer**: Interactive state diagram and current state tracking
 - 📋 **Real-time Feedback**: Live validation and error reporting
 
@@ -95,7 +99,57 @@ src/
 │   └── latex_math_fsm.py    # Token-by-token LaTeX math FSM
 └── llm/
     ├── __init__.py
-    └── simple_client.py     # Simplified Groq client
+    ├── simple_client.py     # Groq API client
+    ├── local_client.py      # Local Hugging Face model client  
+    └── unified_client.py    # Unified interface with auto-fallback
+```
+
+## Model Options
+
+### 1. Groq API (Default)
+- **Model**: llama-3.1-8b-instant
+- **Setup**: Requires GROQ_API_KEY environment variable
+- **Advantages**: Fast, cloud-based, no local compute requirements
+
+### 2. Local Gemma Model
+- **Model**: google/gemma-3-270m
+- **Setup**: Requires torch, transformers, accelerate packages + Hugging Face authentication
+- **Advantages**: Privacy, no API costs, offline operation, lightweight (270M parameters)
+- **Requirements**: ~2GB VRAM recommended, Hugging Face account with Gemma access
+
+### 3. Auto Mode
+- **Behavior**: Automatically selects best available model
+- **Fallback**: Switches between Groq and local models as needed
+- **Recommended**: For most users, provides best reliability
+
+## Installation
+
+### Basic Requirements
+```bash
+pip install -r requirements.txt
+```
+
+### For Local Gemma Model Support
+```bash
+# Install PyTorch (choose appropriate version for your system)
+pip install torch torchvision torchaudio
+
+# Install Transformers and related packages
+pip install transformers accelerate huggingface-hub
+
+# Set up Hugging Face authentication (for local models):
+
+# Method 1: CLI login
+huggingface-cli login
+
+# Method 2: Environment variable
+export HF_TOKEN="your_hf_token_here"
+
+# Method 3: Add to .env file
+echo "HF_TOKEN=your_hf_token_here" >> .env
+
+# Note: Some models require access requests
+# Visit model pages on Hugging Face to request access if needed
 ```
 
 ## Usage with LLM

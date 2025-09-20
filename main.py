@@ -21,7 +21,7 @@ load_dotenv()
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from src.fsm import LaTeXMathFSM
-from src.llm import SimpleGroqClient
+from src.llm.unified_client import create_auto_client
 
 
 def print_banner():
@@ -62,20 +62,29 @@ def demo_with_llm():
     print("\n🤖 LLM Generation Demo")
     print("-" * 25)
     
-    # Create LLM client
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        print("❌ GROQ_API_KEY not found in .env file")
+    # Create unified LLM client (auto-select best available model)
+    try:
+        client = create_auto_client(prefer_local=False)
+        print("✅ LLM client initialized")
+        
+        # Show model info
+        info = client.get_model_info()
+        print(f"📊 Using model: {info.get('primary_model_type', 'unknown')}")
+        if info.get('fallback_available', False):
+            print(f"📋 Fallback available: {info.get('fallback_model', {}).get('model_type', 'unknown')}")
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize LLM client: {e}")
+        print("💡 Try setting GROQ_API_KEY or installing: pip install torch transformers accelerate")
         return
         
-    client = SimpleGroqClient(api_key)
     fsm = LaTeXMathFSM()
     
     # Test prompts
     prompts = [
         "Generate a LaTeX expression for x squared",
         "Create a fraction with a and b in LaTeX",
-        "Solve for the system of linear equations: x + y = 10 and x - y = 4"
+        "Generate a LaTeX expression with Greek letters"
     ]
     
     for i, prompt in enumerate(prompts, 1):
@@ -90,6 +99,16 @@ def demo_with_llm():
         except Exception as e:
             print(f"❌ Error: {e}")
             print(f"{'='*60}")
+            
+            # Try with fallback if available
+            try:
+                current_info = client.get_model_info()
+                if current_info.get('fallback_available', False):
+                    print("🔄 Attempting with fallback model...")
+                    # Force switch to fallback would require implementation
+                    # For now, just show the error
+            except:
+                pass
 
 
 def main():

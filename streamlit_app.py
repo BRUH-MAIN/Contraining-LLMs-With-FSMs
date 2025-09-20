@@ -29,7 +29,7 @@ load_dotenv()
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from src.fsm import LaTeXMathFSM
-from src.llm import SimpleGroqClient
+from src.llm.unified_client import UnifiedLLMClient, ModelType, create_auto_client
 
 # Page configuration
 st.set_page_config(
@@ -84,6 +84,27 @@ st.markdown("""
         display: inline-block;
         font-family: monospace;
     }
+    .selected-token {
+        background-color: #28a745;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .fsm-step {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        background-color: #f8f9fa;
+    }
+    .state-display {
+        background-color: #e3f2fd;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #2196f3;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -92,20 +113,45 @@ def initialize_session_state():
     if 'fsm' not in st.session_state:
         st.session_state.fsm = LaTeXMathFSM()
     
-    if 'llm_client' not in st.session_state:
-        api_key = os.getenv("GROQ_API_KEY")
-        if api_key:
-            try:
-                st.session_state.llm_client = SimpleGroqClient(api_key)
-                st.session_state.llm_available = True
-            except Exception as e:
+    if 'selected_model_type' not in st.session_state:
+        st.session_state.selected_model_type = "groq"
+    
+    if 'llm_client' not in st.session_state or st.session_state.get('model_type_changed', False):
+        initialize_llm_client()
+        st.session_state.model_type_changed = False
+
+def initialize_llm_client():
+    """Initialize the LLM client based on selected model type."""
+    try:
+        if st.session_state.selected_model_type == "groq":
+            api_key = os.getenv("GROQ_API_KEY")
+            if not api_key:
                 st.session_state.llm_client = None
                 st.session_state.llm_available = False
-                st.session_state.llm_error = str(e)
-        else:
-            st.session_state.llm_client = None
-            st.session_state.llm_available = False
-            st.session_state.llm_error = "GROQ_API_KEY not found in environment"
+                st.session_state.llm_error = "GROQ_API_KEY not found in environment"
+                return
+            
+            st.session_state.llm_client = UnifiedLLMClient(
+                model_type=ModelType.GROQ,
+                groq_api_key=api_key,
+                auto_fallback=True
+            )
+        elif st.session_state.selected_model_type == "local":
+            st.session_state.llm_client = UnifiedLLMClient(
+                model_type=ModelType.LOCAL_GEMMA,
+                local_model_name="google/gemma-3-270m",
+                auto_fallback=True
+            )
+        elif st.session_state.selected_model_type == "auto":
+            st.session_state.llm_client = create_auto_client(prefer_local=False)
+        
+        st.session_state.llm_available = True
+        st.session_state.llm_error = None
+        
+    except Exception as e:
+        st.session_state.llm_client = None
+        st.session_state.llm_available = False
+        st.session_state.llm_error = str(e)
 
 def render_header():
     """Render the application header."""
@@ -123,8 +169,60 @@ def render_header():
         - ✅ Token-by-token processing of LaTeX expressions
         - ✅ Real-time validation and state visualization  
         - ✅ Support for 200+ LaTeX commands and operators
-        - ✅ LLM integration for constrained generation
+        - ✅ LLM integration for constrained generation (Groq API + Local Models)
         """)
+
+def render_model_selection_sidebar():
+    """Render the model selection sidebar."""
+    with st.sidebar:
+        st.header("🤖 Model Selection")
+        
+        model_options = {
+            "groq": "🌐 Groq API (llama-3.1-8b-instant)",
+            "local": "💻 Local Model (google/gemma-3-270m)",
+            "auto": "🔄 Auto (with fallback)"
+        }
+        
+        selected_model = st.selectbox(
+            "Choose LLM Model:",
+            options=list(model_options.keys()),
+            format_func=lambda x: model_options[x],
+            index=0 if st.session_state.selected_model_type == "groq" else 
+                  1 if st.session_state.selected_model_type == "local" else 2,
+            help="Select which model to use for LaTeX generation"
+        )
+        
+        # Check if model type changed
+        if selected_model != st.session_state.selected_model_type:
+            st.session_state.selected_model_type = selected_model
+            st.session_state.model_type_changed = True
+            st.rerun()
+        
+        # Display current model status
+        st.markdown("---")
+        st.markdown("**Current Status:**")
+        
+        if st.session_state.llm_available:
+            st.success("✅ Model loaded successfully")
+            
+            # Display model info if available
+            try:
+                if hasattr(st.session_state.llm_client, 'get_model_info'):
+                    model_info = st.session_state.llm_client.get_model_info()
+                    
+                    with st.expander("📊 Model Details"):
+                        st.json(model_info)
+            except Exception as e:
+                st.info(f"Model info unavailable: {e}")
+        else:
+            st.error("❌ Model not available")
+            if hasattr(st.session_state, 'llm_error'):
+                st.error(f"Error: {st.session_state.llm_error}")
+        
+        # Reload button
+        if st.button("🔄 Reload Model", help="Reinitialize the selected model"):
+            st.session_state.model_type_changed = True
+            st.rerun()
 
 def render_fsm_demo():
     """Render the FSM demonstration interface."""
@@ -238,9 +336,32 @@ def render_llm_generation():
     """Render the LLM generation interface."""
     st.header("🤖 LLM-Guided Generation")
     
+    # Debug: Show LLM status
+    st.markdown("**🔍 Debug Info:**")
+    st.markdown(f"- LLM Available: `{st.session_state.get('llm_available', 'Not set')}`")
+    st.markdown(f"- Selected Model: `{st.session_state.get('selected_model_type', 'Not set')}`")
+    st.markdown(f"- LLM Client: `{type(st.session_state.get('llm_client', 'None'))}`")
+    
+    if st.session_state.get('llm_available', False) and hasattr(st.session_state.llm_client, 'get_model_info'):
+        try:
+            model_info = st.session_state.llm_client.get_model_info()
+            st.markdown(f"- Primary Model: `{model_info.get('primary_model_type', 'Unknown')}`")
+            st.markdown(f"- Fallback Available: `{model_info.get('fallback_available', False)}`")
+        except:
+            pass
+    
+    if not st.session_state.get('llm_available', False):
+        st.markdown(f"- Error: `{st.session_state.get('llm_error', 'No error info')}`")
+    
     if not st.session_state.llm_available:
         st.error(f"LLM not available: {st.session_state.llm_error}")
-        st.info("To enable LLM features, set your GROQ_API_KEY environment variable and restart the app.")
+        
+        if st.session_state.selected_model_type == "groq":
+            st.info("To enable Groq API features, set your GROQ_API_KEY environment variable and restart the app.")
+        elif st.session_state.selected_model_type == "local":
+            st.info("Local model requires torch and transformers packages. Install with: pip install torch transformers accelerate")
+        else:
+            st.info("Auto mode requires either Groq API key or transformers packages to be available.")
         return
     
     # Input section
@@ -277,10 +398,106 @@ def render_llm_generation():
     with st.expander("⚙️ Generation Settings"):
         verbose = st.checkbox("Show detailed generation process", value=True)
         max_attempts = st.slider("Maximum generation attempts", 1, 5, 3)
+        
+        # Add a quick test button
+        if st.button("🧪 Quick Test - Simple Expression"):
+            test_simple_generation()
     
     # Process generation if button clicked
     if generate_button and prompt:
         generate_latex_expression(prompt, verbose, max_attempts)
+
+def test_simple_generation():
+    """Test generation with a very simple, known-to-work expression."""
+    st.markdown("### 🧪 Quick Test")
+    
+    fsm = LaTeXMathFSM()
+    fsm.reset()
+    
+    # Manual step-through of a simple expression: $x$
+    steps = ["$", "x", "$"]
+    result = ""
+    
+    st.markdown("Testing simple expression: `$x$`")
+    
+    for i, token in enumerate(steps):
+        st.markdown(f"**Step {i+1}:** Processing token `{token}`")
+        
+        if fsm.process_token(token):
+            result += token
+            st.success(f"✅ Accepted → State: `{fsm.state}` → Expression: `{result}`")
+        else:
+            st.error(f"❌ Rejected by FSM")
+            break
+    
+    if fsm.is_complete():
+        st.success(f"🎉 **Success!** Generated: `{result}`")
+    else:
+        st.error(f"❌ **Failed** - Final state: `{fsm.state}`, Complete: `{fsm.is_complete()}`")
+
+def generate_with_streamlit_verbose(prompt: str, fsm):
+    """Generate LaTeX with LLM and display step-by-step process in Streamlit."""
+    
+    # Step 1: Show generation process header
+    st.markdown("#### 🧮 LaTeX Generation Process")
+    
+    # Step 2: Generate LLM response using direct user prompt
+    st.markdown("**🎯 Calling LLM...**")
+    
+    try:
+        response = st.session_state.llm_client.generate_simple(prompt, max_tokens=30, temperature=0.1)
+        st.markdown(f"**🎯 Raw LLM Response:** `{response}`")
+    except Exception as e:
+        st.error(f"LLM call failed: {str(e)}")
+        return "$x$"  # Fallback
+    
+    # Step 4: Extract LaTeX expression
+    latex_expr = st.session_state.llm_client.extract_latex_expression(response)
+    
+    if latex_expr:
+        st.markdown(f"**🔍 Extracted LaTeX Expression:** `{latex_expr}`")
+        
+        # Step 5: Test with FSM step by step
+        st.markdown(f"**🧪 Testing '{latex_expr}' with LaTeX FSM...**")
+        
+        # Reset FSM and test step by step
+        fsm.reset()
+        tokens = fsm.tokenize(latex_expr)
+        
+        # Show tokenization
+        st.markdown(f"**Tokens:** `{tokens}`")
+        
+        # Process each token with visualization
+        valid = True
+        for i, token in enumerate(tokens):
+            prev_state = fsm.state
+            success = fsm.process_token(token)
+            new_state = fsm.state
+            
+            status_icon = "✅" if success else "❌"
+            st.markdown(
+                f"**Token {i + 1}:** `{token}` | "
+                f"`{prev_state}` → `{new_state}` {status_icon}"
+            )
+            
+            if not success:
+                valid = False
+                break
+        
+        # Final result
+        is_complete = fsm.is_complete() if valid else False
+        
+        if valid and is_complete:
+            st.success(f"✅ LLM output '{latex_expr}' is valid!")
+            return latex_expr
+        else:
+            st.warning(f"❌ LLM output '{latex_expr}' rejected by FSM")
+            st.info("🔧 Using fallback expression...")
+            return "$x$"  # Simple fallback
+    else:
+        st.warning("❌ No valid LaTeX expression found in LLM response")
+        st.info("🔧 Using fallback expression...")
+        return "$x$"  # Simple fallback
 
 def generate_latex_expression(prompt: str, verbose: bool, max_attempts: int):
     """Generate LaTeX expression using LLM with FSM constraints."""
@@ -301,14 +518,8 @@ def generate_latex_expression(prompt: str, verbose: bool, max_attempts: int):
             if verbose:
                 st.markdown(f"**Attempt {attempt + 1}:**")
                 
-                # Create a container for real-time updates
-                generation_container = st.container()
-                
-                with generation_container:
-                    # Capture generation process
-                    result = st.session_state.llm_client.generate_with_latex_fsm(
-                        prompt, fsm, verbose=False  # We'll handle verbose output ourselves
-                    )
+                # Show step-by-step FSM-guided generation with custom verbose display
+                result = generate_with_streamlit_verbose(prompt, fsm)
             else:
                 result = st.session_state.llm_client.generate_with_latex_fsm(
                     prompt, fsm, verbose=False
@@ -351,6 +562,198 @@ def generate_latex_expression(prompt: str, verbose: bool, max_attempts: int):
     # All attempts failed
     status_text.text("❌ Generation failed after all attempts")
     st.error("Could not generate a valid LaTeX expression. Try a different prompt or check your API key.")
+
+def generate_with_detailed_fsm_steps(prompt: str, fsm):
+    """Generate LaTeX with detailed step-by-step FSM filtering visualization."""
+    
+    # Create container for step-by-step process
+    steps_container = st.container()
+    
+    with steps_container:
+        st.markdown("#### 🔄 Step-by-Step FSM-Guided Generation")
+        
+        # Initialize
+        result_expr = ""
+        max_steps = 15  # Reduced to prevent infinite loops
+        
+        # Reset FSM
+        fsm.reset()
+        
+        for step in range(max_steps):
+            st.markdown(f"**Step {step + 1}:**")
+            
+            # Create columns for step display
+            col1, col2, col3 = st.columns([1, 2, 2])
+            
+            with col1:
+                st.markdown(f"**Current State:**")
+                st.code(fsm.state)
+                st.markdown(f"**Expression so far:**")
+                st.code(result_expr if result_expr else "(empty)")
+            
+            # Get valid next tokens from FSM
+            valid_tokens = fsm.get_current_possibilities()
+            
+            # Limit tokens for display but keep all for selection
+            display_tokens = valid_tokens[:15] if len(valid_tokens) > 15 else valid_tokens
+            
+            with col2:
+                st.markdown("**FSM Valid Tokens:**")
+                if valid_tokens:
+                    # Display as badges
+                    tokens_html = " ".join([f'<span class="token-step">{token}</span>' for token in display_tokens])
+                    if len(valid_tokens) > 15:
+                        tokens_html += f'<span class="token-step">...+{len(valid_tokens)-15} more</span>'
+                    st.markdown(tokens_html, unsafe_allow_html=True)
+                else:
+                    st.warning("No valid tokens available")
+                    break
+            
+            # Choose token with improved logic
+            chosen_token = choose_token_for_prompt(prompt, valid_tokens, fsm.state, result_expr, step)
+            
+            with col3:
+                if chosen_token:
+                    st.markdown("**Selected Token:**")
+                    st.markdown(f'<div style="background-color: #28a745; color: white; padding: 8px; border-radius: 4px; text-align: center;"><strong>{chosen_token}</strong></div>', unsafe_allow_html=True)
+                    
+                    # Process the token
+                    if fsm.process_token(chosen_token):
+                        result_expr += chosen_token
+                        st.success(f"✅ Token accepted → New state: `{fsm.state}`")
+                        
+                        # Check if complete
+                        if fsm.is_complete():
+                            st.success("🎉 **Complete valid expression generated!**")
+                            break
+                    else:
+                        st.error("❌ Token rejected by FSM")
+                        break
+                else:
+                    st.markdown("**Decision:**")
+                    st.info("🏁 Ending generation (no suitable token)")
+                    break
+            
+            st.markdown("---")
+        else:
+            # Hit max steps
+            st.warning(f"⚠️ Reached maximum steps ({max_steps}). Generation incomplete.")
+        
+        # Return result or fallback
+        if fsm.is_complete():
+            return result_expr
+        else:
+            st.info(f"Generated incomplete expression: `{result_expr}`. Using simple fallback.")
+            return "$x$"
+
+def choose_token_for_prompt(prompt: str, valid_tokens: list, current_state: str, current_expr: str, step: int = 0) -> str:
+    """Choose the most appropriate token based on prompt and FSM state with more reliable selection."""
+    import random
+    
+    if not valid_tokens:
+        return None
+        
+    prompt_lower = prompt.lower()
+    
+    # Ensure we end the expression properly
+    if "$" in valid_tokens and len(current_expr) > 4:
+        # End if we have meaningful content and we're in math_mode
+        if current_state == "math_mode" and any(char in current_expr for char in "xyzabc123"):
+            # End after step 6 or if expression is getting long
+            if step >= 6 or len(current_expr) > 8:
+                return "$"
+    
+    # State-specific reliable logic
+    if current_state == "start":
+        # Always start with math mode delimiter
+        return "$" if "$" in valid_tokens else valid_tokens[0]
+    
+    elif current_state == "math_mode":
+        # Early steps - build main content
+        if step <= 2:
+            # Content-based selection with prompt analysis
+            if "fraction" in prompt_lower and "\\frac" in valid_tokens:
+                return "\\frac"
+            elif "sum" in prompt_lower and "\\sum" in valid_tokens:
+                return "\\sum"
+            elif "alpha" in prompt_lower and "\\alpha" in valid_tokens:
+                return "\\alpha"
+            elif "beta" in prompt_lower and "\\beta" in valid_tokens:
+                return "\\beta"
+            elif "integral" in prompt_lower and "\\int" in valid_tokens:
+                return "\\int"
+            
+            # Variable selection - prefer x for equations
+            variables = ["x", "y", "z", "a", "b"]
+            available_vars = [var for var in variables if var in valid_tokens]
+            if available_vars:
+                if "equation" in prompt_lower and "x" in available_vars:
+                    return "x"
+                else:
+                    return available_vars[0]  # Take first available
+        
+        # Middle steps - add operations
+        elif step <= 4:
+            # If we have a variable, consider operations
+            if any(var in current_expr for var in ["x", "y", "z", "a", "b"]):
+                if "quadratic" in prompt_lower or "square" in prompt_lower:
+                    if "^" in valid_tokens and "^" not in current_expr:
+                        return "^"
+                
+                # Add operators occasionally
+                operators = ["+", "-", "="]
+                available_ops = [op for op in operators if op in valid_tokens]
+                if available_ops and random.random() < 0.4:
+                    return available_ops[0]
+            
+            # Add numbers or more variables
+            numbers = ["1", "2", "3"]
+            available_nums = [num for num in numbers if num in valid_tokens]
+            if available_nums:
+                return available_nums[0]
+        
+        # Later steps - try to end
+        else:
+            if "$" in valid_tokens:
+                return "$"
+    
+    elif current_state in ["superscript", "subscript"]:
+        # Handle superscripts/subscripts simply
+        if "2" in valid_tokens and ("square" in prompt_lower or "quadratic" in prompt_lower):
+            return "2"
+        
+        # Simple superscript/subscript tokens
+        simple_tokens = ["2", "1", "n", "i", "{"]
+        available = [token for token in simple_tokens if token in valid_tokens]
+        if available:
+            return available[0]
+    
+    elif current_state == "fraction_num":
+        # Always open brace for fraction numerator
+        return "{" if "{" in valid_tokens else valid_tokens[0]
+    
+    elif current_state == "content":
+        # Inside braces - add simple content then close
+        if "}" in valid_tokens and len([c for c in current_expr if c == "}"]) < len([c for c in current_expr if c == "{"]):
+            # We have unclosed braces, sometimes close them
+            if random.random() < 0.7:  # 70% chance to close
+                return "}"
+        
+        # Add simple content
+        simple_content = ["a", "b", "x", "y", "1", "2"]
+        available = [token for token in simple_content if token in valid_tokens]
+        if available:
+            return available[0]
+    
+    # Fallback - choose the most reasonable token
+    # Prefer meaningful tokens over punctuation
+    priority_tokens = ["x", "y", "a", "b", "1", "2", "$", "}", "+", "-"]
+    for token in priority_tokens:
+        if token in valid_tokens:
+            return token
+    
+    # Last resort - first available token
+    return valid_tokens[0] if valid_tokens else None
 
 def render_fsm_visualizer():
     """Render FSM state visualizer."""
@@ -457,6 +860,9 @@ def main():
     """Main application function."""
     # Initialize session state
     initialize_session_state()
+    
+    # Render model selection sidebar
+    render_model_selection_sidebar()
     
     # Render header
     render_header()

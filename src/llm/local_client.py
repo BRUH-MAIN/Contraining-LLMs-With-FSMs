@@ -150,14 +150,17 @@ class LocalGemmaClient:
             print(f"\n🧮 Local Gemma LaTeX Generation Process")
             print(f"📝 Original prompt: {prompt}")
         
-        # Create a prompt that asks for LaTeX math expression
+        # Create a prompt that forces simple LaTeX math expression generation
         latex_prompt = f"""
-{prompt}
+Generate a simple LaTeX math expression for: {prompt}
 
-Please respond with a simple LaTeX mathematical expression enclosed in dollar signs.
-Examples: $x^2$, $\\frac{{a}}{{b}}$, $\\alpha + \\beta$
+Rules:
+1. Use ONLY inline math format: $expression$
+2. Keep expressions simple and complete
+3. No text, no explanations, ONLY the math expression
+4. Examples: $ax^3 + bx^2 + cx + d$, $\\frac{{x}}{{y}}$, $\\alpha^2$
 
-Response:"""
+Expression:"""
         
         if verbose:
             print(f"📋 Enhanced prompt sent to local model:")
@@ -203,22 +206,41 @@ Response:"""
     
     def extract_latex_expression(self, text: str) -> Optional[str]:
         """Extract LaTeX mathematical expression from text."""
-        # Look for expressions in dollar signs
+        
+        # Clean the text first
+        text = text.strip()
         
         # Try inline math first: $...$
         inline_matches = re.findall(r'\$([^$]+)\$', text)
         if inline_matches:
-            return f"${inline_matches[0]}$"
+            # Take the first complete match
+            expr = inline_matches[0].strip()
+            if expr:  # Make sure it's not empty
+                return f"${expr}$"
         
         # Try display math: $$...$$
         display_matches = re.findall(r'\$\$([^$]+)\$\$', text)
         if display_matches:
-            return f"$${display_matches[0]}$$"
+            expr = display_matches[0].strip()
+            if expr:
+                return f"${expr}$"  # Convert to inline math
         
-        # Try LaTeX blocks: \[...\]
-        block_matches = re.findall(r'\\\\?\[([^\\]+)\\\\?\]', text)
-        if block_matches:
-            return f"\\[{block_matches[0]}\\]"
+        # Try to find incomplete expressions and fix them
+        incomplete_matches = re.findall(r'\$\$?\s*([^$]*(?:\\\w+[^$]*)*)', text)
+        if incomplete_matches:
+            expr = incomplete_matches[0].strip()
+            # If it looks like a math expression, wrap it
+            if re.search(r'[a-zA-Z]|\\\w+|\d|[+\-*/^_{}()]', expr):
+                return f"${expr}$"
+        
+        # If text starts with $ but is incomplete, try to extract what we can
+        if text.startswith('$'):
+            # Extract everything after the first $
+            remaining = text[1:].strip()
+            # Remove any trailing incomplete parts
+            remaining = re.sub(r'[^a-zA-Z0-9+\-*/^_{}()\\\s]*$', '', remaining)
+            if remaining and len(remaining) > 0:
+                return f"${remaining}$"
         
         return None
     

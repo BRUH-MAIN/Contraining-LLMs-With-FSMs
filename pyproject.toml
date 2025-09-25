@@ -18,6 +18,9 @@ dependencies = [
     "black>=25.9.0",
     "flake8>=7.3.0",
     "mypy>=1.18.2",
+    "matplotlib>=3.10.6",
+    "networkx>=3.5",
+    "numpy>=2.3.3",
 ]
 
 [project.optional-dependencies]

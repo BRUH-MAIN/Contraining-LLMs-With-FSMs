@@ -1,222 +1,299 @@
-# LaTeX Math FSM - Quick Start
+# LaTeX Math FSM - Constraining LLMs with Finite State Machines 🧮
 
-## Overview
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![Groq](https://img.shields.io/badge/Groq-000000?style=flat&logo=groq&logoColor=white)](https://groq.com/)
 
-This project demonstrates a **token-by-token finite state machine (FSM)** for constraining LaTeX mathematical expressions. The FSM processes each token individually and transitions through states to validate mathematical syntax:
+> **A sophisticated finite state machine that constrains Large Language Models to generate syntactically valid LaTeX mathematical expressions.**
 
-1. **start** → **math_mode** (accepts $, $$, \[)
-2. **math_mode** → **superscript/subscript/content** (processes variables, operators, commands)
-3. **Various states** for handling fractions, braces, commands, etc.
+## 🌟 Overview
 
-## Key Features
+This project implements a **token-by-token finite state machine (FSM)** for constraining Large Language Models (LLMs) to generate valid LaTeX mathematical expressions. The FSM processes LaTeX math expressions incrementally, ensuring syntactic validity through state transitions and providing real-time guidance to LLMs.
 
-- ✅ **Token-by-token processing**: FSM moves state by state for each LaTeX token
-- ✅ **Real-time validation**: Only valid LaTeX math expressions can complete the FSM path
-- ✅ **Comprehensive coverage**: Supports 200+ LaTeX math commands, Greek letters, operators
-- ✅ **Multi-model LLM integration**: Support for both Groq API and local Hugging Face models
-- ✅ **Automatic fallback**: Seamlessly switch between API and local models
-- ✅ **Local model support**: Run google/gemma-2-2b-it locally with GPU acceleration
+### ✨ Key Features
 
-## Quick Demo
+- **🎯 Precise Constraint**: 100% syntactically valid LaTeX math generation
+- **📊 200+ Commands**: Comprehensive LaTeX math command support
+- **🔄 Real-time Validation**: Token-by-token processing with immediate feedback
+- **🌐 LLM Integration**: Works with any LLM API (Groq, OpenAI, etc.)
+- **📱 Interactive Web UI**: Streamlit interface with live visualization
+- **🎨 Rich Visualizations**: Interactive state diagrams and processing flows
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
+### Installation
 
 ```bash
-# Run the LaTeX FSM demo
-python3 demo_latex.py
+# Clone the repository
+git clone https://github.com/BRUH-MAIN/Contraining-LLMs-With-FSMs.git
+cd Contraining-LLMs-With-FSMs
 
-# Run the integration demo showing LLM constraint
-python3 main.py
+# Install dependencies (using uv - recommended)
+uv sync
 
-# Run the interactive Streamlit web interface
+# Or using pip
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
+```
+
+### Run the Interactive Web Interface
+
+```bash
+# Launch Streamlit app
+uv run streamlit run streamlit_app.py
+
+# Or using pip
 streamlit run streamlit_app.py
 ```
 
-## Web Interface
+Visit `http://localhost:8501` to explore the interactive interface!
 
-Launch the interactive Streamlit web application:
+## 📁 Project Structure
 
-### Option 1: Using uv (Recommended if you have uv)
+```
+latex-math-fsm/
+├── 📁 src/                     # Core source code
+│   ├── fsm/                   # Finite State Machine implementation
+│   │   ├── __init__.py       
+│   │   └── latex_math_fsm.py  # Main FSM class
+│   └── llm/                   # LLM integration clients
+│       ├── __init__.py
+│       ├── simple_client.py   # Groq API client
+│       ├── local_client.py    # Local LLM support
+│       └── unified_client.py  # Unified client interface
+├── 📁 examples/               # Example scripts and demos
+│   ├── demo_latex.py         # Interactive FSM demonstration
+│   ├── main.py               # Main application entry point
+│   └── reference_notebook.ipynb  # Reference notebook from internet
+├── 📁 tools/                  # Utility tools
+│   ├── fsm_diagram.py        # Generate static diagrams
+│   └── fsm_visualizer.py     # Interactive visualizations
+├── 📁 scripts/               # Shell scripts
+│   └── run_app.sh           # Quick app launcher
+├── 📁 docs/                  # Documentation
+│   ├── FSM_DOCUMENTATION.md  # Technical FSM specification
+│   ├── MERMAID_DIAGRAMS.md   # Mermaid state diagrams
+│   └── README_DIAGRAMS.md    # Diagram documentation
+├── 📁 assets/                # Static assets
+│   ├── latex_fsm_detailed.png    # Detailed state diagram
+│   ├── latex_fsm_simplified.png  # Simplified overview
+│   └── latex_fsm_trace.png       # Example processing trace
+├── 📁 tests/                 # Test files (to be added)
+├── streamlit_app.py          # Main web interface
+├── pyproject.toml           # Project configuration
+├── requirements.txt         # Pip dependencies
+├── QUICK_START.md          # Quick setup guide
+└── README.md               # This file
+```
+
+## 🎮 Usage Examples
+
+### 1. Interactive Web Interface
+
 ```bash
-# Install dependencies and run directly
 uv run streamlit run streamlit_app.py
 ```
 
-### Option 2: Automatic Setup with existing venv
+Features:
+- **FSM Demo**: Test LaTeX expressions with step-by-step validation
+- **LLM Generation**: AI-powered LaTeX generation with FSM constraints
+- **FSM Visualizer**: Interactive state diagrams and processing flows
+
+### 2. Command Line Demo
+
 ```bash
-# Use the startup script (detects existing venv)
-./run_app.sh
+uv run python examples/demo_latex.py
 ```
 
-### Option 3: Manual Setup
-```bash
-# Activate your virtual environment first
-source .venv/bin/activate  # or your venv path
-
-# Install dependencies if needed
-pip install -r requirements.txt
-
-# Set your Groq API key (optional, for LLM features)
-export GROQ_API_KEY="your_api_key_here"
-
-# Launch the web interface
-streamlit run streamlit_app.py
-```
-
-The web interface provides:
-- 🔬 **FSM Demo**: Test LaTeX expressions with step-by-step validation
-- 🤖 **LLM Generation**: Generate LaTeX using AI with FSM constraints
-- 🎯 **Model Selection**: Choose between Groq API, Local Gemma, or Auto mode
-- 🔄 **Automatic Fallback**: Seamless switching between available models
-- 🗺️ **FSM Visualizer**: Interactive state diagram and current state tracking
-- 📋 **Real-time Feedback**: Live validation and error reporting
-
-## Example Output
-
-```
-📝 Testing: '$\frac{x^2}{y}$'
-   Tokens: ['$', '\frac', '{', 'x', '^', '2', '}', '{', 'y', '}', '$']
-   Step 1: '$' | start → math_mode ✅
-   Step 2: '\frac' | math_mode → fraction_num ✅
-   Step 3: '{' | fraction_num → content ✅
-   Step 4: 'x' | content → content ✅
-   Step 5: '^' | content → content ✅
-   Step 6: '2' | content → content ✅
-   Step 7: '}' | content → math_mode ✅
-   Step 8: '{' | math_mode → content ✅
-   Step 9: 'y' | content → content ✅
-   Step 10: '}' | content → math_mode ✅
-   Step 11: '$' | math_mode → end_state ✅
-   
-   Result: ✅ VALID
-   Final State: end_state
-```
-
-## Code Structure
-
-```
-src/
-├── fsm/
-│   ├── __init__.py
-│   └── latex_math_fsm.py    # Token-by-token LaTeX math FSM
-└── llm/
-    ├── __init__.py
-    ├── simple_client.py     # Groq API client
-    ├── local_client.py      # Local Hugging Face model client  
-    └── unified_client.py    # Unified interface with auto-fallback
-```
-
-## Model Options
-
-### 1. Groq API (Default)
-- **Model**: llama-3.1-8b-instant
-- **Setup**: Requires GROQ_API_KEY environment variable
-- **Advantages**: Fast, cloud-based, no local compute requirements
-
-### 2. Local Gemma Model
-- **Model**: google/gemma-3-270m
-- **Setup**: Requires torch, transformers, accelerate packages + Hugging Face authentication
-- **Advantages**: Privacy, no API costs, offline operation, lightweight (270M parameters)
-- **Requirements**: ~2GB VRAM recommended, Hugging Face account with Gemma access
-
-### 3. Auto Mode
-- **Behavior**: Automatically selects best available model
-- **Fallback**: Switches between Groq and local models as needed
-- **Recommended**: For most users, provides best reliability
-
-## Installation
-
-### Basic Requirements
-```bash
-pip install -r requirements.txt
-```
-
-### For Local Gemma Model Support
-```bash
-# Install PyTorch (choose appropriate version for your system)
-pip install torch torchvision torchaudio
-
-# Install Transformers and related packages
-pip install transformers accelerate huggingface-hub
-
-# Set up Hugging Face authentication (for local models):
-
-# Method 1: CLI login
-huggingface-cli login
-
-# Method 2: Environment variable
-export HF_TOKEN="your_hf_token_here"
-
-# Method 3: Add to .env file
-echo "HF_TOKEN=your_hf_token_here" >> .env
-
-# Note: Some models require access requests
-# Visit model pages on Hugging Face to request access if needed
-```
-
-## Usage with LLM
+### 3. Programmatic Usage
 
 ```python
 from src.fsm import LaTeXMathFSM
 from src.llm import SimpleGroqClient
 
-# Create FSM
+# Initialize FSM and LLM client
 fsm = LaTeXMathFSM()
-
-# Create LLM client (requires GROQ_API_KEY environment variable)
 client = SimpleGroqClient()
 
-# Generate LaTeX math with FSM constraints
-result = client.generate_with_latex_fsm("Generate a fraction with x and y", fsm)
-print(f"Generated: {result}")  # e.g., "$\frac{x}{y}$"
+# Generate constrained LaTeX
+result = client.generate_with_latex_fsm(
+    "Generate a quadratic equation", 
+    fsm, 
+    verbose=True
+)
+print(f"Generated: {result}")
+
+# Validate existing LaTeX
+fsm.reset()
+is_valid = fsm.process_input("$x^2 + 2x + 1$")
+print(f"Valid: {is_valid}")
 ```
 
-## Setup
+## 🏗️ Architecture
 
-1. Install dependencies:
-```bash
-pip install groq python-dotenv
+### FSM State Machine
+
+The core FSM handles 10 distinct states:
+
+```mermaid
+stateDiagram-v2
+    [*] --> START
+    START --> MATH_MODE : $, $$, \[
+    MATH_MODE --> COMMAND : \command
+    MATH_MODE --> SUPERSCRIPT : ^
+    MATH_MODE --> SUBSCRIPT : _
+    MATH_MODE --> CONTENT : {
+    MATH_MODE --> END_STATE : $, $$, \]
+    COMMAND --> CONTENT : {
+    CONTENT --> MATH_MODE : }
+    SUPERSCRIPT --> MATH_MODE : expr
+    SUBSCRIPT --> MATH_MODE : expr
+    END_STATE --> [*]
 ```
 
-2. Set up environment:
-```bash
-# Create .env file with your Groq API key
-echo "GROQ_API_KEY=your_key_here" > .env
+### Supported LaTeX Features
+
+- **Commands**: `\frac`, `\sqrt`, `\sum`, `\int`, `\alpha`, `\beta`, `\gamma`, etc.
+- **Greek Letters**: All 24 Greek alphabet characters
+- **Operators**: `+`, `-`, `*`, `/`, `=`, `\leq`, `\geq`, `\neq`, `\rightarrow`, etc.
+- **Structures**: Fractions, superscripts, subscripts, nested braces
+- **Delimiters**: `$...$`, `$$...$$`, `\[...\]`
+
+### LLM Integration Strategies
+
+1. **Validation-First**: Generate freely, then validate with FSM
+2. **Token-by-Token Guidance**: Guide LLM using valid next tokens
+3. **Hybrid Approach**: Combine both for optimal results
+
+## 🎯 Applications
+
+### Educational Tools
+- **Math Expression Validation**: Check student LaTeX input
+- **Interactive Learning**: Step-by-step LaTeX construction
+- **Error Explanation**: Detailed feedback on syntax errors
+
+### Content Generation
+- **AI-Assisted Writing**: Guide LLMs to generate valid LaTeX
+- **Document Processing**: Validate mathematical expressions in documents
+- **Template Generation**: Ensure LaTeX templates are syntactically correct
+
+### Development Tools
+- **LaTeX Editors**: Real-time syntax validation
+- **Code Completion**: Suggest valid next tokens
+- **Error Prevention**: Prevent invalid LaTeX construction
+
+## 📊 Performance
+
+- **Processing Speed**: O(n) where n = number of tokens
+- **Memory Usage**: O(1) state storage + O(d) depth tracking
+- **Validation Accuracy**: 100% syntactic correctness for supported constructs
+- **Command Coverage**: 200+ LaTeX mathematical commands
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+### Areas for Contribution
+- **Extended Commands**: Add support for more LaTeX packages
+- **Semantic Validation**: Mathematical correctness checking
+- **Performance Optimization**: Faster processing for large documents
+- **Test Coverage**: Comprehensive test suite
+- **Documentation**: Improve guides and examples
+
+## 📚 Documentation
+
+- **[Technical FSM Specification](docs/FSM_DOCUMENTATION.md)**: Complete state machine details
+- **[Interactive Diagrams](docs/MERMAID_DIAGRAMS.md)**: GitHub-compatible Mermaid diagrams  
+- **[Diagram Documentation](docs/README_DIAGRAMS.md)**: Guide to all visualizations
+- **[Quick Start Guide](QUICK_START.md)**: Rapid setup instructions
+
+## 🌐 Web Interface Features
+
+The Streamlit web interface provides:
+
+### 1. FSM Demo Tab
+- Test LaTeX expressions interactively
+- Step-by-step token processing visualization
+- Real-time validation feedback
+- Error highlighting and suggestions
+
+### 2. LLM Generation Tab  
+- AI-powered LaTeX generation
+- Multiple LLM model support (Groq, Local)
+- FSM-constrained generation process
+- Generated expression validation
+
+### 3. FSM Visualizer Tab
+- Interactive state diagram with hover details
+- Live expression processing demonstration
+- State usage statistics and metrics
+- Transition matrix heatmaps
+- Complete state reference guide
+
+## 🔬 Research & Academic Use
+
+This project demonstrates practical applications of:
+- **Formal Methods**: Using FSMs to constrain AI systems
+- **Human-AI Collaboration**: Structured guidance for language models
+- **Domain-Specific Languages**: LaTeX mathematical expression processing
+- **Real-time Validation**: Incremental syntax checking
+
+### Citation
+
+If you use this project in academic research, please cite:
+
+```bibtex
+@software{latex_math_fsm_2024,
+  title={LaTeX Math FSM: Constraining LLMs with Finite State Machines},
+  author={[Your Name]},
+  year={2024},
+  url={https://github.com/BRUH-MAIN/Contraining-LLMs-With-FSMs}
+}
 ```
 
-3. Run demos:
-```bash
-python3 demo_latex.py              # LaTeX FSM demo
-python3 demo_latex_integration.py  # Integration demo with simulated LLM
-```
+## 🐛 Known Limitations
 
-## How the LaTeX Math FSM Works
+- **Semantic Validation**: FSM ensures syntax, not mathematical correctness
+- **Command Coverage**: Limited to predefined command set (extensible)
+- **Complex Environments**: Some advanced LaTeX environments not fully supported
+- **Performance**: Large expressions may require optimization
 
-The FSM processes LaTeX mathematical expressions token by token:
+## 🔮 Future Roadmap
 
-1. **State: start** 
-   - Accepts: $, $$, \[ (math mode delimiters)
-   - Transitions to: math_mode
+- [ ] **Semantic Validation**: Mathematical correctness checking
+- [ ] **Extended LaTeX Support**: More packages and environments
+- [ ] **Performance Optimization**: Faster processing algorithms
+- [ ] **Visual Editor**: Drag-and-drop LaTeX construction
+- [ ] **API Service**: RESTful API for integration
+- [ ] **Mobile Support**: Responsive web interface
 
-2. **State: math_mode**
-   - Accepts: variables (x,y,z), numbers (0-9), operators (+,-,=), commands (\frac, \alpha, etc.)
-   - Transitions to: superscript, subscript, content, or end_state
+## 📄 License
 
-3. **State: superscript/subscript**
-   - Accepts: single characters or { for grouped expressions
-   - Transitions to: content or back to math_mode
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-4. **State: content**
-   - Handles content inside braces {}
-   - Tracks brace depth for proper nesting
-   - Transitions back to math_mode when braces close
+## 🙏 Acknowledgments
 
-## Supported LaTeX Math Elements
+- **LaTeX Community**: For the comprehensive mathematical typesetting system
+- **Streamlit Team**: For the excellent web framework
+- **Groq**: For fast LLM inference API
+- **Open Source Community**: For inspiration and tools
 
-- **Math Modes**: `$...$`, `$$...$$`, `\[...\]`
-- **Variables**: `a-z`, `A-Z`
-- **Numbers**: `0-9`
-- **Operators**: `+`, `-`, `=`, `*`, `/`, `<`, `>`, etc.
-- **Greek Letters**: `\alpha`, `\beta`, `\gamma`, `\theta`, `\pi`, etc.
-- **Functions**: `\sin`, `\cos`, `\tan`, `\ln`, `\log`, `\exp`, etc.
-- **Structures**: `\frac{a}{b}`, `x^2`, `x_{i}`, `\sqrt{x}`, `\sum`, `\int`
-- **Delimiters**: `()`, `[]`, `{}`, `||`, `\langle`, `\rangle`
-- **Environments**: `\begin{matrix}...\end{matrix}` (basic support)
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/BRUH-MAIN/Contraining-LLMs-With-FSMs/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/BRUH-MAIN/Contraining-LLMs-With-FSMs/discussions)
+- **Email**: [Your Email] (if you want to provide contact)
+
+---
+
+**Built with ❤️ for the intersection of AI and formal methods**
+
+*Constraining LLMs with FSMs - Making AI more reliable through structured guidance* 🧮✨

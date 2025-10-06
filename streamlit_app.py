@@ -31,6 +31,21 @@ sys.path.append(str(Path(__file__).parent / "src"))
 from src.fsm import LaTeXMathFSM
 from src.llm.unified_client import UnifiedLLMClient, ModelType, create_auto_client
 
+# Import FSM visualizer components
+try:
+    from tools.fsm_visualizer import (
+        create_interactive_fsm_diagram,
+        create_token_flow_visualization,
+        create_state_statistics_chart,
+        render_fsm_trace_table,
+        render_fsm_complexity_metrics,
+        render_state_description,
+        create_transition_matrix_heatmap
+    )
+    VISUALIZER_AVAILABLE = True
+except ImportError:
+    VISUALIZER_AVAILABLE = False
+
 # Page configuration
 st.set_page_config(
     page_title="LaTeX Math FSM",
@@ -756,9 +771,218 @@ def choose_token_for_prompt(prompt: str, valid_tokens: list, current_state: str,
     return valid_tokens[0] if valid_tokens else None
 
 def render_fsm_visualizer():
-    """Render FSM state visualizer."""
+    """Render enhanced FSM state visualizer with interactive components."""
     st.header("🗺️ FSM State Visualizer")
     
+    if not VISUALIZER_AVAILABLE:
+        st.warning("⚠️ Advanced visualizer components not available. Install plotly with: `uv add plotly`")
+        render_basic_fsm_visualizer()
+        return
+    
+    # Current FSM state
+    fsm = st.session_state.fsm
+    
+    # Create tabs for different visualizations
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📊 State Diagram", 
+        "🔍 Live Demo", 
+        "📈 Statistics", 
+        "🗃️ Transition Matrix",
+        "📚 State Reference"
+    ])
+    
+    with tab1:
+        st.subheader("Interactive State Diagram")
+        
+        # Render complexity metrics
+        render_fsm_complexity_metrics(fsm)
+        
+        # Interactive FSM diagram
+        fig = create_interactive_fsm_diagram()
+        st.plotly_chart(fig, use_container_width=True, key="interactive_fsm_diagram")
+        
+        # State legend
+        st.markdown("""
+        **State Legend:**
+        - 🟢 **Start/End**: Entry and exit points
+        - 🔵 **Math Mode**: Core mathematical processing
+        - 🟠 **Commands**: LaTeX command handling
+        - 🟣 **Content**: Brace content processing
+        - 🔴 **Special**: Superscript/subscript handling
+        """)
+    
+    with tab2:
+        st.subheader("Live FSM Demonstration")
+        
+        # Input for testing
+        test_expr = st.text_input(
+            "🧪 Test LaTeX Expression:",
+            value="$\\frac{x^2}{y+1}$",
+            help="Enter a LaTeX expression to see step-by-step FSM processing"
+        )
+        
+        if st.button("🚀 Process Expression", type="primary"):
+            if test_expr:
+                # Reset FSM and process
+                fsm.reset()
+                
+                with st.spinner("Processing expression..."):
+                    try:
+                        # Tokenize and process step by step
+                        tokens = fsm.tokenize(test_expr)
+                        states = ["start"]
+                        all_possibilities = []
+                        
+                        for token in tokens:
+                            possibilities = fsm.get_current_possibilities()
+                            all_possibilities.append(possibilities.copy())
+                            
+                            if fsm.process_token(token):
+                                states.append(fsm.state)
+                            else:
+                                st.error(f"❌ FSM rejected token: '{token}'")
+                                break
+                        
+                        # Check if complete
+                        is_complete = fsm.is_complete()
+                        
+                        # Show results
+                        col1, col2 = st.columns([3, 1])
+                        
+                        with col2:
+                            st.metric("✅ Valid Expression", "Yes" if is_complete else "No")
+                            st.metric("🔢 Tokens Processed", len(tokens))
+                            st.metric("🔄 State Changes", len(states))
+                        
+                        with col1:
+                            if len(tokens) > 1 and len(states) > 1:
+                                # Token flow visualization
+                                flow_fig = create_token_flow_visualization(tokens, states)
+                                st.plotly_chart(flow_fig, use_container_width=True, key="token_flow_viz")
+                        
+                        # Detailed trace table
+                        render_fsm_trace_table(tokens, states[1:], all_possibilities)
+                        
+                        # State usage statistics
+                        if len(fsm.path) > 1:
+                            stats_fig = create_state_statistics_chart(fsm.path)
+                            st.plotly_chart(stats_fig, use_container_width=True, key="state_stats_chart")
+                        
+                    except Exception as e:
+                        st.error(f"Error processing expression: {str(e)}")
+            else:
+                st.warning("Please enter a LaTeX expression to test.")
+    
+    with tab3:
+        st.subheader("FSM Statistics & Metrics")
+        
+        # Current state info
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Current State")
+            st.info(f"**State:** `{fsm.state}`")
+            st.info(f"**Brace Depth:** `{fsm.brace_depth}`")
+            st.info(f"**Path Length:** `{len(fsm.path)}`")
+            
+            # Valid next tokens
+            possibilities = fsm.get_current_possibilities()
+            st.markdown("#### Valid Next Tokens")
+            if possibilities:
+                # Show first 10 possibilities
+                for i, token in enumerate(possibilities[:10]):
+                    st.markdown(f"• `{token}`")
+                if len(possibilities) > 10:
+                    st.markdown(f"... and {len(possibilities) - 10} more")
+            else:
+                st.markdown("*No valid tokens (terminal state)*")
+        
+        with col2:
+            st.markdown("#### FSM Path")
+            if len(fsm.path) > 1:
+                path_str = " → ".join(fsm.path)
+                st.markdown(f"`{path_str}`")
+                
+                # Path statistics
+                stats_fig = create_state_statistics_chart(fsm.path)
+                st.plotly_chart(stats_fig, use_container_width=True, key="path_stats_chart")
+            else:
+                st.markdown("*FSM not yet used*")
+        
+        # Command categories
+        st.markdown("#### Supported LaTeX Commands")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("**Greek Letters (24)**")
+            greek = ["\\alpha", "\\beta", "\\gamma", "\\delta", "\\epsilon"]
+            for cmd in greek:
+                st.markdown(f"• `{cmd}`")
+            st.markdown("• *...and more*")
+        
+        with col2:
+            st.markdown("**Functions (20+)**")
+            funcs = ["\\frac", "\\sqrt", "\\sum", "\\int", "\\sin"]
+            for cmd in funcs:
+                st.markdown(f"• `{cmd}`")
+            st.markdown("• *...and more*")
+        
+        with col3:
+            st.markdown("**Operators (30+)**")
+            ops = ["\\leq", "\\geq", "\\neq", "\\rightarrow", "\\cdot"]
+            for cmd in ops:
+                st.markdown(f"• `{cmd}`")
+            st.markdown("• *...and more*")
+    
+    with tab4:
+        st.subheader("State Transition Matrix")
+        
+        # Transition matrix heatmap
+        matrix_fig = create_transition_matrix_heatmap(fsm)
+        st.plotly_chart(matrix_fig, use_container_width=True, key="transition_matrix_heatmap")
+        
+        st.markdown("""
+        **How to Read This Matrix:**
+        - **Rows**: Source states (where transitions start from)
+        - **Columns**: Target states (where transitions go to)  
+        - **Colors**: Darker blue indicates more frequent transitions
+        - **Interactive**: Hover over cells to see transition details
+        """)
+    
+    with tab5:
+        st.subheader("State Reference Guide")
+        
+        # State selector
+        all_states = ['START', 'MATH_MODE', 'COMMAND', 'CONTENT', 'SUPERSCRIPT', 'SUBSCRIPT', 'END_STATE']
+        selected_state = st.selectbox(
+            "Select a state to view details:",
+            all_states,
+            index=all_states.index('MATH_MODE') if 'MATH_MODE' in all_states else 0
+        )
+        
+        # Render state description
+        render_state_description(selected_state)
+        
+        # Example expressions for each state
+        st.markdown("#### Example Expressions")
+        
+        examples = {
+            'START': ['Ready to accept: $, $$, \\['],
+            'MATH_MODE': ['$x^2$', '$\\alpha + \\beta$', '$\\frac{a}{b}$'],
+            'COMMAND': ['$\\frac{...}$', '$\\sum_{...}$', '$\\sqrt{...}$'],
+            'CONTENT': ['${x+1}$', '${\\alpha^2}$', '${a+b+c}$'],
+            'SUPERSCRIPT': ['$x^2$', '$e^{i\\pi}$', '$a^{n+1}$'],
+            'SUBSCRIPT': ['$x_i$', '$a_{i+1}$', '$\\sum_{n=1}$'],
+            'END_STATE': ['Complete valid expressions']
+        }
+        
+        if selected_state in examples:
+            for example in examples[selected_state]:
+                st.code(example, language='latex')
+
+def render_basic_fsm_visualizer():
+    """Render basic FSM visualizer without advanced components."""
     # Current FSM state
     fsm = st.session_state.fsm
     current_state = fsm.state
